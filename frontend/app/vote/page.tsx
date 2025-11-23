@@ -42,10 +42,13 @@ export default function VotePage() {
       setStatusMsg("🔐 Mengirim Bukti Kemanusiaan ke Blockchain...");
 
       // A. Siapkan Data Proof
-      const proofBytes = packGroth16ProofToBytes(zkResult.proof);
-      const publicSignals = zkResult.publicSignals.map((val: any) => BigInt(val));
+      const proof = zkResult.proof;
+      const publicSignals = zkResult.publicSignals.map((v: any) => BigInt(v));
 
-      console.log("Public Signals yang dikirim:", publicSignals);
+      const a = proof.pi_a.map((v: any) => BigInt(v));
+      const b = proof.pi_b.map((row: any) => row.map((v: any) => BigInt(v)));
+      const c = proof.pi_c.map((v: any) => BigInt(v));
+
 
       // B. Setup Wallet Client
       const walletClient = createWalletClient({
@@ -62,7 +65,7 @@ export default function VotePage() {
         address: NEXT_PUBLIC_EVOTING_ADDRESS as `0x${string}`,
         abi: EVOTING_ABI,
         functionName: "verifyHumanity",
-        args: [proofBytes, publicSignals],
+        args: [a, b, c, publicSignals],
         account: address,
         gas: BigInt(500000)
       });

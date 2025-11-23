@@ -216,6 +216,7 @@ contract EVoting is Ownable {
     }
     
 
+
     function getCandidateVotes(uint256 _electionId, uint256 _candidateId) external view returns (uint256) {
         return candidates[_electionId][_candidateId].voteCount;
     }
