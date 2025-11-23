@@ -43,7 +43,7 @@ export default function VotePage() {
 
       // A. Siapkan Data Proof
       const proofBytes = packGroth16ProofToBytes(zkResult.proof);
-      const publicSignals = zkResult.publicSignals.map((x: string) => BigInt(x));
+      const publicSignals = zkResult.publicSignals.map((val: any) => BigInt(val));
 
       console.log("Public Signals yang dikirim:", publicSignals);
 
