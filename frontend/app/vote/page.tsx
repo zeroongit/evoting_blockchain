@@ -64,6 +64,7 @@ export default function VotePage() {
         functionName: "verifyHumanity",
         args: [proofBytes, publicSignals],
         account: address,
+        gas: BigInt(500000)
       });
 
       setStatusMsg("⏳ Menunggu konfirmasi blockchain...");
@@ -96,9 +97,9 @@ export default function VotePage() {
       // Kita butuh proof dummy yang valid secara struktur untuk contract
       // Di real app, input ini kompleks (Merkle Tree). Untuk demo skripsi, kita pakai input dummy yang valid di circuit.
       const voteInput = {
-        commitment: 123, // Dummy inputs sesuai circuit vote.wasm
-        nullifier: 456,
-        vote_hash: 789,
+        commitment:"20595346326572914964186581639484694308224330290454662633399973481953444150659", // Dummy inputs sesuai circuit vote.wasm
+        nullifier: "11002798236248564979181902430552955631258061132494555643635906994269666662459",
+        vote_hash: "0",
         election_id: 0,
         voter_id: 111,
         secret: 222,
@@ -133,6 +134,7 @@ export default function VotePage() {
         // args: electionId, candidateId, nullifier, proof
         args: [BigInt(0), BigInt(selectedCandidate), nullifierHex as `0x${string}`, proofBytes], 
         account: userAddress as `0x${string}`,
+        gas: BigInt(600000)
       });
 
       setStatusMsg("⏳ Menunggu suara masuk kotak...");
