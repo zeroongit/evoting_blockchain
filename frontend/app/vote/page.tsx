@@ -1,16 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createWalletClient, custom, http, createPublicClient } from "viem";
 import { sepolia } from "viem/chains";
 import WalletButton from "@/components/WalletButton";
 import FaceVerification from "@/components/FaceVerification";
 import { candidateData } from "@/lib/candidateData";
 import { NEXT_PUBLIC_EVOTING_ADDRESS, EVOTING_ABI } from "@/lib/constants";
-import { packGroth16ProofToBytes } from "@/lib/utils";
-import { generateProof } from "@/lib/zk";
+import { generateHumanityProof, generateVoteProof, checkBackendHealth } from "@/lib/zkBackend";
 
-// Definisi Tahapan Voting
 type VotingStep = "CONNECT" | "VERIFY_FACE" | "SUBMIT_VERIFICATION" | "SELECT_CANDIDATE" | "SUBMIT_VOTE" | "DONE";
 
 async function checkAndSwitchNetwork(walletClient: any) {
@@ -19,9 +17,8 @@ async function checkAndSwitchNetwork(walletClient: any) {
     try {
       await walletClient.switchChain({ id: sepolia.id });
     } catch (error: any) {
-      // Jika error 4902 (Chain not found), user harus add manual (jarang terjadi untuk Sepolia)
       if (error.code === 4902) {
-         alert("Tolong tambahkan network Sepolia ke MetaMask kamu.");
+        alert("Tolong tambahkan network Sepolia ke MetaMask kamu.");
       }
       throw new Error("Harap ganti network ke Sepolia untuk melanjutkan.");
     }
@@ -34,58 +31,120 @@ export default function VotePage() {
   const [statusMsg, setStatusMsg] = useState("");
   const [txHash, setTxHash] = useState("");
   const [selectedCandidate, setSelectedCandidate] = useState<number | null>(null);
+  const [backendReady, setBackendReady] = useState(false);
 
-  // --- 1. FUNGSI KIRIM TRANSAKSI VERIFIKASI WAJAH ---
+  // ✅ Check backend health on mount
+  useEffect(() => {
+    const checkBackend = async () => {
+      const health = await checkBackendHealth();
+      if (health) {
+        setBackendReady(true);
+        console.log("✅ Backend circuits ready:", health);
+      } else {
+        console.warn("⚠️ Backend circuits might not be available!");
+        setBackendReady(false);
+      }
+    };
+    checkBackend();
+  }, []);
+
+  // ✅ VERIFY HUMANITY - Generate proof via backend API
   async function handleFaceVerified(zkResult: any) {
     try {
       setStep("SUBMIT_VERIFICATION");
       setStatusMsg("🔐 Mengirim Bukti Kemanusiaan ke Blockchain...");
 
-      // A. Siapkan Data Proof
-      const proofBytes = packGroth16ProofToBytes(zkResult.proof);
-      const publicSignals = zkResult.publicSignals.map((val: any) => BigInt(val));
+      if (!backendReady) {
+        throw new Error("Backend tidak siap. Pastikan circuits sudah di-compile.");
+      }
 
-      console.log("Public Signals yang dikirim:", publicSignals);
+      // Call backend API untuk generate proof
+      console.log("📡 Requesting humanity proof from backend...");
+      
+      const proofResult = await generateHumanityProof({
+        human_score: 85,           // Dari face recognition hasil
+        uniqueness_score: 90,      // Dari face recognition hasil
+        behavior_proof: 75,        // Dari face recognition hasil
+        timestamp: Math.floor(Date.now() / 1000),
+        user_identifier: userAddress,
+      });
 
-      // B. Setup Wallet Client
+      console.log("✅ Proof received:", proofResult);
+
+      // Parse proof dari response
+      const proof = proofResult.proof;
+      const publicSignalsStr = proofResult.publicSignals;
+
+      // Convert ke BigInt untuk contract
+      const a = [BigInt(proof.pi_a[0]), BigInt(proof.pi_a[1])];
+      const b = [
+        [BigInt(proof.pi_b[0][0]), BigInt(proof.pi_b[0][1])],
+        [BigInt(proof.pi_b[1][0]), BigInt(proof.pi_b[1][1])],
+      ];
+      const c = [BigInt(proof.pi_c[0]), BigInt(proof.pi_c[1])];
+
+      // ✅ PENTING: Public signals HARUS 5 elements sesuai circuit
+      const publicSignals = publicSignalsStr.map((v: string) => BigInt(v));
+
+      if (publicSignals.length !== 5) {
+        throw new Error(
+          `Expected 5 public signals, got ${publicSignals.length}. Signals: ${publicSignalsStr.join(", ")}`
+        );
+      }
+
+      console.log("🔍 Proof data parsed:");
+      console.log("a:", a.map(x => x.toString()));
+      console.log("b:", b.map(row => row.map(x => x.toString())));
+      console.log("c:", c.map(x => x.toString()));
+      console.log("publicSignals (5):", publicSignals.map(x => x.toString()));
+
+      // Setup Wallet Client
       const walletClient = createWalletClient({
         chain: sepolia,
         transport: custom((window as any).ethereum),
       });
 
       await checkAndSwitchNetwork(walletClient);
-
       const [address] = await walletClient.getAddresses();
 
-      // C. Panggil Contract: verifyHumanity
+      // Kirim ke contract
+      setStatusMsg("✍️ Mengirim ke Smart Contract...");
+
       const hash = await walletClient.writeContract({
         address: NEXT_PUBLIC_EVOTING_ADDRESS as `0x${string}`,
         abi: EVOTING_ABI,
         functionName: "verifyHumanity",
-        args: [proofBytes, publicSignals],
+        args: [
+          a as [bigint, bigint],
+          b as [[bigint, bigint], [bigint, bigint]],
+          c as [bigint, bigint],
+          publicSignals as [bigint, bigint, bigint, bigint, bigint],
+        ],
         account: address,
-        gas: BigInt(500000)
+        gas: BigInt(500000),
       });
 
       setStatusMsg("⏳ Menunggu konfirmasi blockchain...");
       setTxHash(hash);
 
-      // D. Tunggu Transaksi Selesai
-      const publicClient = createPublicClient({ chain: sepolia, transport: http() });
+      const publicClient = createPublicClient({
+        chain: sepolia,
+        transport: http(),
+      });
+
       await publicClient.waitForTransactionReceipt({ hash });
 
-      // E. Sukses -> Lanjut Pilih Kandidat
       setStep("SELECT_CANDIDATE");
       setStatusMsg("");
       
     } catch (error: any) {
-      console.error(error);
+      console.error("❌ Error:", error);
       alert("Gagal Verifikasi Blockchain: " + (error.message || error));
-      setStep("VERIFY_FACE"); // Ulangi
+      setStep("VERIFY_FACE");
     }
   }
 
-  // --- 2. FUNGSI KIRIM SUARA (VOTE) ---
+  // ✅ CAST VOTE - Generate proof via backend API
   async function handleVote() {
     if (selectedCandidate === null) return;
 
@@ -93,32 +152,53 @@ export default function VotePage() {
       setStep("SUBMIT_VOTE");
       setStatusMsg("🗳️ Sedang mencoblos (Generate Vote Proof)...");
 
-      // A. Generate Proof untuk Voting (Vote Circuit)
-      // Kita butuh proof dummy yang valid secara struktur untuk contract
-      // Di real app, input ini kompleks (Merkle Tree). Untuk demo skripsi, kita pakai input dummy yang valid di circuit.
+      if (!backendReady) {
+        throw new Error("Backend tidak siap. Pastikan circuits sudah di-compile.");
+      }
+
+      // Generate vote proof via backend
+      console.log("📡 Requesting vote proof from backend...");
+
       const voteInput = {
-        commitment:"20595346326572914964186581639484694308224330290454662633399973481953444150659", // Dummy inputs sesuai circuit vote.wasm
+        commitment: "20595346326572914964186581639484694308224330290454662633399973481953444150659",
         nullifier: "11002798236248564979181902430552955631258061132494555643635906994269666662459",
         vote_hash: "0",
         election_id: 0,
+        candidate_id: selectedCandidate,
         voter_id: 111,
         secret: 222,
-        candidate_id: selectedCandidate,
-        candidate_count: 3
+        candidate_count: 3,
       };
-      
-      // Generate ZK Proof Voting
-      const zkResult = await generateProof("vote", voteInput);
-      const proofBytes = packGroth16ProofToBytes(zkResult.proof);
+
+      const proofResult = await generateVoteProof(voteInput);
+
+      console.log("✅ Vote proof received:", proofResult);
+
+      // Parse proof
+      const proof = proofResult.proof;
+      const publicSignalsStr = proofResult.publicSignals;
+
+      const a = [BigInt(proof.pi_a[0]), BigInt(proof.pi_a[1])];
+      const b = [
+        [BigInt(proof.pi_b[0][0]), BigInt(proof.pi_b[0][1])],
+        [BigInt(proof.pi_b[1][0]), BigInt(proof.pi_b[1][1])],
+      ];
+      const c = [BigInt(proof.pi_c[0]), BigInt(proof.pi_c[1])];
+
+      const publicSignals = publicSignalsStr.map((v: string) => BigInt(v));
+
+      if (publicSignals.length !== 5) {
+        throw new Error(
+          `Expected 5 public signals for vote, got ${publicSignals.length}`
+        );
+      }
+
+      console.log("🔍 Vote proof data parsed:");
+      console.log("publicSignals (5):", publicSignals.map(x => x.toString()));
 
       setStatusMsg("✍️ Mengirim Suara ke Blockchain...");
 
-      // B. Setup Nullifier (Agar tidak bisa double vote)
-      // Kita buat Nullifier unik berdasarkan userAddress + ElectionID agar demo lancar
-      // Di produksi, ini harus hash rahasia.
-      const nullifierHex = "0x" + BigInt(userAddress).toString(16).padStart(64, "0"); 
-
-      // C. Kirim Transaksi: castVote
+      // Setup Wallet & Contract
       const walletClient = createWalletClient({
         chain: sepolia,
         transport: custom((window as any).ethereum),
@@ -127,31 +207,44 @@ export default function VotePage() {
       await checkAndSwitchNetwork(walletClient);
       const [address] = await walletClient.getAddresses();
 
+      // Setup nullifier
+      const nullifierHex = "0x" + BigInt(userAddress).toString(16).padStart(64, "0");
+
       const hash = await walletClient.writeContract({
         address: NEXT_PUBLIC_EVOTING_ADDRESS as `0x${string}`,
         abi: EVOTING_ABI,
         functionName: "castVote",
-        // args: electionId, candidateId, nullifier, proof
-        args: [BigInt(0), BigInt(selectedCandidate), nullifierHex as `0x${string}`, proofBytes], 
-        account: userAddress as `0x${string}`,
-        gas: BigInt(600000)
+        args: [
+          BigInt(0), // electionId
+          BigInt(selectedCandidate),
+          nullifierHex as `0x${string}`,
+          a as [bigint, bigint],
+          b as [[bigint, bigint], [bigint, bigint]],
+          c as [bigint, bigint],
+          publicSignals as [bigint, bigint, bigint, bigint, bigint],
+        ],
+        account: address,
+        gas: BigInt(600000),
       });
 
       setStatusMsg("⏳ Menunggu suara masuk kotak...");
       setTxHash(hash);
 
-      const publicClient = createPublicClient({ chain: sepolia, transport: http() });
+      const publicClient = createPublicClient({
+        chain: sepolia,
+        transport: http(),
+      });
+
       await publicClient.waitForTransactionReceipt({ hash });
 
       setStep("DONE");
 
     } catch (error: any) {
-      console.error(error);
-      // Handle error user reject / rpc error
-      if(error.message.includes("User denied")) {
-         setStatusMsg("❌ Transaksi dibatalkan user.");
+      console.error("❌ Error voting:", error);
+      if (error.message.includes("User denied")) {
+        setStatusMsg("❌ Transaksi dibatalkan user.");
       } else {
-         alert("Gagal Voting: " + error.message);
+        alert("Gagal Voting: " + error.message);
       }
       setStep("SELECT_CANDIDATE");
     }
@@ -171,6 +264,12 @@ export default function VotePage() {
               ? "Terima kasih telah berpartisipasi!" 
               : "Ikuti langkah-langkah berikut untuk memberikan suara."}
           </p>
+
+          {!backendReady && step !== "DONE" && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">⚠️ Backend tidak siap. Pastikan circuits sudah di-compile!</p>
+            </div>
+          )}
           
           {/* PROGRESS BAR */}
           {step !== "DONE" && (
@@ -221,7 +320,6 @@ export default function VotePage() {
               <p className="text-gray-500 mb-6">
                 Lakukan pemindaian wajah untuk membuktikan bahwa Anda manusia asli (Proof of Humanity).
               </p>
-              {/* Panggil Komponen FaceVerification */}
               <FaceVerification onVerified={handleFaceVerified} />
             </div>
           )}

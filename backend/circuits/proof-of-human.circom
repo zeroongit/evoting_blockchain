@@ -1,7 +1,7 @@
 pragma circom 2.0.0;
 
 include "circomlib/circuits/poseidon.circom";
-include "circomlib/circuits/comparators.circom"; // Ganti gates dengan comparators
+include "circomlib/circuits/comparators.circom";
 
 template ProofOfHuman() {
     signal input human_score;      // 0-100
@@ -30,7 +30,7 @@ template ProofOfHuman() {
     check_behavior.in[1] <== 60;
     check_behavior.out === 1;
     
-    // Create humanity proof
+    // Create humanity proof dengan 4 inputs
     component humanity_hash = Poseidon(4);
     humanity_hash.inputs[0] <== human_score;
     humanity_hash.inputs[1] <== uniqueness_score;
@@ -40,4 +40,4 @@ template ProofOfHuman() {
     humanity_proof <== humanity_hash.out;
 }
 
-component main { public [user_identifier] } = ProofOfHuman();
+component main { public [human_score, uniqueness_score, behavior_proof, timestamp, user_identifier] } = ProofOfHuman();

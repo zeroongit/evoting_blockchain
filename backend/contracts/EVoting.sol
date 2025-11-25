@@ -3,33 +3,45 @@ pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-// Interface Khusus Humanity (Menerima array panjang 2)
-interface IHumanityVerifier {
+// ✅ Interface untuk setiap circuit sesuai jumlah public signals
+
+// ProofOfHuman: 5 public signals
+interface HumanityVerifier {
     function verifyProof(
         uint[2] memory a,
         uint[2][2] memory b,
         uint[2] memory c,
-        uint[2] memory input // SEKARANG TERIMA 2
+        uint[5] memory input
     ) external view returns (bool);
 }
 
-// Interface Khusus Vote (Menerima array panjang 5)
-interface IVoteVerifier {
+// VoteCasting: 5 public signals
+interface VoteVerifier {
     function verifyProof(
         uint[2] memory a,
         uint[2][2] memory b,
         uint[2] memory c,
-        uint[5] memory input // SEKARANG TERIMA 5 (Sesuai sirkuit vote)
+        uint[5] memory input
     ) external view returns (bool);
 }
 
-// Interface Umum (Untuk Voter/Authority yang simpel)
-interface IVerifier {
+// VoterEligibility: 1 public signal
+interface VoterVerifier {
     function verifyProof(
         uint[2] memory a,
         uint[2][2] memory b,
         uint[2] memory c,
-        uint[1] memory input 
+        uint[1] memory input
+    ) external view returns (bool);
+}
+
+// ProofOfAuthority: 2 public signals
+interface AuthorityVerifier {
+    function verifyProof(
+        uint[2] memory a,
+        uint[2][2] memory b,
+        uint[2] memory c,
+        uint[2] memory input
     ) external view returns (bool);
 }
 
@@ -71,10 +83,10 @@ contract EVoting is Ownable {
 
     uint256 private electionCounter;
     
-    IVerifier public voterVerifier;
-    IVoteVerifier public voteVerifier;          // GANTI TIPE
-    IHumanityVerifier public humanityVerifier;  // GANTI TIPE
-    IVerifier public authorityVerifier;
+    VoterVerifier public voterVerifier;
+    VoteVerifier public voteVerifier;
+    HumanityVerifier public humanityVerifier;
+    AuthorityVerifier public authorityVerifier;
 
     event ElectionCreated(uint256 indexed electionId, string title);
     event ElectionStarted(uint256 indexed electionId);
@@ -106,10 +118,10 @@ contract EVoting is Ownable {
         address _humanityVerifier,
         address _authorityVerifier
     ) Ownable(msg.sender) {
-        voterVerifier = IVerifier(_voterVerifier);
-        voteVerifier = IVoteVerifier(_voteVerifier);           // Cast ke Interface Baru
-        humanityVerifier = IHumanityVerifier(_humanityVerifier); // Cast ke Interface Baru
-        authorityVerifier = IVerifier(_authorityVerifier);
+        voterVerifier = VoterVerifier(_voterVerifier);
+        voteVerifier = VoteVerifier(_voteVerifier);
+        humanityVerifier = HumanityVerifier(_humanityVerifier);
+        authorityVerifier = AuthorityVerifier(_authorityVerifier);
         authorities[msg.sender] = true;
     }
 
@@ -164,58 +176,79 @@ contract EVoting is Ownable {
         emit ElectionEnded(_electionId);
     }
 
-    // --- PERBAIKAN: Verify Humanity terima array[2] ---
+    // ✅ VERIFY HUMANITY: 5 public signals
+    // [0] = human_score, [1] = uniqueness_score, [2] = behavior_proof, [3] = timestamp, [4] = user_identifier
     function verifyHumanity(
-        bytes memory _proof,
-        uint[2] memory _publicSignals // SEKARANG [2]
+        uint[2] memory a,
+        uint[2][2] memory b,
+        uint[2] memory c,
+        uint[5] memory _publicSignals
     ) external {
-        (uint[2] memory a, uint[2][2] memory b, uint[2] memory c) = 
-            abi.decode(_proof, (uint[2], uint[2][2], uint[2]));
-
         require(humanityVerifier.verifyProof(a, b, c, _publicSignals), "Invalid humanity proof");
-        
         humanVerified[msg.sender] = true;
         emit HumanityVerified(msg.sender);
     }
 
-    // --- PERBAIKAN: Cast Vote terima array[5] (untuk amannya, sesuaikan dengan vote.circom) ---
-    // ... (kode atas sama)
+    // ✅ VERIFY VOTER ELIGIBILITY: 1 public signal [election_id]
+    function verifyVoterEligibility(
+        uint256 _electionId,
+        uint[2] memory a,
+        uint[2][2] memory b,
+        uint[2] memory c,
+        uint[1] memory _publicSignals
+    ) external view returns (bool) {
+        require(_publicSignals[0] == _electionId, "Election ID mismatch");
+        return voterVerifier.verifyProof(a, b, c, _publicSignals);
+    }
 
+    // ✅ VERIFY AUTHORITY: 2 public signals [election_id, action_hash]
+    function verifyAuthority(
+        uint256 _electionId,
+        bytes32 _actionHash,
+        uint[2] memory a,
+        uint[2][2] memory b,
+        uint[2] memory c,
+        uint[2] memory _publicSignals
+    ) external view returns (bool) {
+        require(_publicSignals[0] == _electionId, "Election ID mismatch");
+        require(uint256(_actionHash) == _publicSignals[1], "Action hash mismatch");
+        require(authorities[msg.sender], "Not an authority");
+        return authorityVerifier.verifyProof(a, b, c, _publicSignals);
+    }
+
+    // ✅ CAST VOTE: 5 public signals
+    // [0] = commitment, [1] = nullifier, [2] = vote_hash, [3] = election_id, [4] = candidate_id
     function castVote(
         uint256 _electionId,
         uint256 _candidateId,
-        bytes memory _nullifier, 
-        bytes memory _proof
+        bytes memory _nullifier,
+        uint[2] memory a,
+        uint[2][2] memory b,
+        uint[2] memory c,
+        uint[5] memory _publicSignals
     ) external electionActive(_electionId) onlyIfHumanityRequired(_electionId) {
         require(_candidateId < elections[_electionId].candidateCount, "Invalid candidate");
         require(!usedNullifiers[_nullifier], "Vote already cast");
-
-        // --- PERBAIKAN: Komentari baris ini untuk hilangkan warning ---
-        // Karena verifikasi ZK Vote kita bypass dulu untuk demo, variabel ini tidak perlu dideklarasi.
-        /* (uint[2] memory a, uint[2][2] memory b, uint[2] memory c) = 
-            abi.decode(_proof, (uint[2], uint[2][2], uint[2]));
         
-        uint[5] memory input; // Sesuaikan dengan jumlah public signal sirkuit vote
-        // ... logic input ...
+        // ✅ Verify ZK proof
+        require(voteVerifier.verifyProof(a, b, c, _publicSignals), "Invalid vote proof");
         
-        require(voteVerifier.verifyProof(a, b, c, input), "Invalid vote proof"); 
-        */
-        // -------------------------------------------------------------
+        // Verify public signals match
+        require(_publicSignals[3] == _electionId, "Election ID mismatch in proof");
+        require(_publicSignals[4] == _candidateId, "Candidate ID mismatch in proof");
 
         // Record vote
         usedNullifiers[_nullifier] = true;
         votes[_electionId].push(Vote({
             nullifier: _nullifier,
             candidateId: _candidateId,
-            proof: _proof,
+            proof: "",
             timestamp: block.timestamp
         }));
         candidates[_electionId][_candidateId].voteCount++;
 
         emit VoteCasted(_electionId, _candidateId);
     }
-    
-
 
     function getCandidateVotes(uint256 _electionId, uint256 _candidateId) external view returns (uint256) {
         return candidates[_electionId][_candidateId].voteCount;
