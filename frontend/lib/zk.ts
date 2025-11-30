@@ -1,31 +1,32 @@
-// lib/zk.ts
 import { groth16 } from 'snarkjs';
 
-// Tipe input untuk ZK Proof (bisa berupa angka atau string)
+// Tipe data input
 type ProofInput = Record<string, any>;
 
 interface ZKResult {
   proof: any;
-  publicSignals: any;
+  publicSignals: string[];
 }
 
 /**
- * Fungsi Ajaib untuk membuat Proof di Browser
- * @param circuitName - Nama file (misal: 'humanity', 'vote', 'voter', 'authority')
- * @param input - Data rahasia yang mau dibuktikan
+ * Fungsi Inti: Generate Proof
  */
-export async function generateProof(
-  circuitName: 'humanity' | 'vote' | 'voter' | 'authority',
+async function generateProof(
+  // Nama ini harus cocok dengan nama file di folder public/circuits (tanpa extension)
+  circuitName: 'proof-of-human' | 'vote-casting' | 'voter-eligibility' | 'proof-of-authority',
   input: ProofInput
 ): Promise<ZKResult> {
   try {
-    // 1. Tentukan lokasi file di folder public
+    // Sesuai screenshot: /circuits/proof-of-human.wasm
     const wasmPath = `/circuits/${circuitName}.wasm`;
     const zkeyPath = `/circuits/${circuitName}.zkey`;
 
-    console.log(`🔄 Generating proof for ${circuitName}...`);
+    console.log(`🔄 Generating proof using: ${wasmPath}...`);
     
-    // 2. Panggil snarkjs untuk melakukan perhitungan matematika berat
+    // Cek apakah file benar-benar ada sebelum diproses snarkjs
+    const check = await fetch(wasmPath);
+    if (!check.ok) throw new Error(`File tidak ditemukan: ${wasmPath}`);
+
     const { proof, publicSignals } = await groth16.fullProve(
       input,
       wasmPath,
@@ -35,29 +36,60 @@ export async function generateProof(
     console.log("✅ Proof Generated Successfully!");
     return { proof, publicSignals };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error(`❌ Error generating ${circuitName} proof:`, error);
-    throw new Error("Gagal membuat bukti ZK. Pastikan file sirkuit ada di folder public.");
+    throw new Error(error.message || "Gagal generate proof");
   }
 }
 
 /**
- * Helper untuk mengubah Proof JSON menjadi format yang bisa dibaca Solidity (CallData)
- * Ini penting karena format JSON snarkjs beda dengan format array Solidity
+ * Cek Ketersediaan File (PENTING!)
+ * Fungsi ini yang menyebabkan error "File sirkuit belum siap" jika salah nama.
  */
-export async function exportCallData(proof: any, publicSignals: any) {
-  // Fungsi bawaan snarkjs untuk konversi ke format Solidity
-  const calldata = await groth16.exportSolidityCallData(proof, publicSignals);
+export async function checkCircuitsAvailability() {
+  const filename = 'proof-of-human.wasm'; 
+  const path = `/circuits/${filename}`;
   
-  // Snarkjs mengembalikan string panjang "[a,b], [[c,d]], ...", kita perlu parse jadi Array
-  // Tip: Biasanya kita pakai regex atau JSON parse modifikasi, 
-  // tapi untuk integrasi viem, kita butuh format struct.
-  
-  // Sederhananya, kita return raw proof components agar bisa di-encode manual di frontend component
-  return {
-    a: [proof.pi_a[0], proof.pi_a[1]],
-    b: [[proof.pi_b[0][1], proof.pi_b[0][0]], [proof.pi_b[1][1], proof.pi_b[1][0]]], // Perhatikan urutan [1][0] ini tricky di Groth16!
-    c: [proof.pi_c[0], proof.pi_c[1]],
-    input: publicSignals
-  };
+  try {
+    console.log(`🕵️ Mencoba ambil file: ${window.location.origin}${path}`);
+    const response = await fetch(path);
+    
+    console.log(`📡 Status Server: ${response.status} (${response.statusText})`);
+    console.log(`📄 Tipe Konten: ${response.headers.get('Content-Type')}`);
+
+    if (response.ok) {
+        // Cek apakah kontennya beneran WASM atau malah halaman HTML Error 404
+        const contentType = response.headers.get('Content-Type');
+        if (contentType && contentType.includes('text/html')) {
+             console.error("⚠️ ERROR KRITIS: Server mengembalikan HTML (Halaman 404), bukan file binary WASM!");
+             return false;
+        }
+        return true;
+    } else {
+        return false;
+    }
+  } catch (e) {
+    console.error("❌ Network Error:", e);
+    return false;
+  }
+}
+
+// --- WRAPPER FUNCTIONS ---
+
+export async function generateHumanityProof(inputs: any) {
+  // String ini harus sama dengan nama file di screenshot: proof-of-human
+  return generateProof('proof-of-human', inputs);
+}
+
+export async function generateVoteProof(inputs: any) {
+  // String ini harus sama dengan nama file di screenshot: vote-casting
+  return generateProof('vote-casting', inputs);
+}
+
+export async function generateEligibilityProof(inputs: any) {
+  return generateProof('voter-eligibility', inputs);
+}
+
+export async function generateAuthorityProof(inputs: any) {
+  return generateProof('proof-of-authority', inputs);
 }

@@ -1,3 +1,3 @@
 import EVotingArtifact from './abi/EVoting.json';
 export const EVOTING_ABI = EVotingArtifact.abi;
-export const NEXT_PUBLIC_EVOTING_ADDRESS="0xc9a4ad66b8a2c2a786a7bdb43c38912e4ae07538"
+export const NEXT_PUBLIC_EVOTING_ADDRESS="0x115fcb2c8bf6f3f80da1e7085e5737a2c0ff97dd"

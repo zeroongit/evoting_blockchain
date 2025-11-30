@@ -3,47 +3,57 @@ pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-// ✅ Interface untuk setiap circuit sesuai jumlah public signals
+// ==========================================
+// ✅ INTERFACES (Disesuaikan dengan Sirkuit Baru)
+// ==========================================
 
-// ProofOfHuman: 5 public signals
+// 1. ProofOfHuman: 4 Public Signals 
+// (OutputHash, Timestamp, UserIdentifier, +1 extra/dummy from libraries usually)
 interface HumanityVerifier {
     function verifyProof(
         uint[2] memory a,
         uint[2][2] memory b,
         uint[2] memory c,
-        uint[5] memory input
+        uint[3] memory input // UPDATE: Disesuaikan jadi 4
     ) external view returns (bool);
 }
 
-// VoteCasting: 5 public signals
+// 2. VoteCasting: 4 Public Signals
+// (Nullifier, VoteHash, ElectionID, CandidateID)
 interface VoteVerifier {
     function verifyProof(
         uint[2] memory a,
         uint[2][2] memory b,
         uint[2] memory c,
-        uint[5] memory input
+        uint[4] memory input // UPDATE: Disesuaikan jadi 4
     ) external view returns (bool);
 }
 
-// VoterEligibility: 1 public signal
+// 3. VoterEligibility: 2 Public Signals 
+// (EligibilityHash, ElectionID)
 interface VoterVerifier {
     function verifyProof(
         uint[2] memory a,
         uint[2][2] memory b,
         uint[2] memory c,
-        uint[1] memory input
+        uint[2] memory input // UPDATE: Disesuaikan jadi 2
     ) external view returns (bool);
 }
 
-// ProofOfAuthority: 2 public signals
+// 4. ProofOfAuthority: 3 Public Signals
+// (AuthProof, ElectionID, ActionHash)
 interface AuthorityVerifier {
     function verifyProof(
         uint[2] memory a,
         uint[2][2] memory b,
         uint[2] memory c,
-        uint[2] memory input
+        uint[3] memory input // UPDATE: Disesuaikan jadi 3
     ) external view returns (bool);
 }
+
+// ==========================================
+// ✅ MAIN CONTRACT
+// ==========================================
 
 contract EVoting is Ownable {
     enum ElectionState { Pending, Active, Ended, Finalized }
@@ -70,17 +80,18 @@ contract EVoting is Ownable {
     struct Vote {
         bytes nullifier;
         uint256 candidateId;
-        bytes proof;
         uint256 timestamp;
     }
 
     mapping(uint256 => Election) public elections;
     mapping(uint256 => mapping(uint256 => Candidate)) public candidates;
     mapping(uint256 => Vote[]) public votes;
-    mapping(bytes => bool) public usedNullifiers;
+    
+    // Menyimpan Nullifier agar tidak bisa double vote
+    mapping(uint256 => mapping(uint256 => bool)) public usedNullifiers; // ElectionID -> Nullifier -> Used
+    
     mapping(address => bool) public authorities;
     mapping(address => bool) public humanVerified;
-
     uint256 private electionCounter;
     
     VoterVerifier public voterVerifier;
@@ -91,6 +102,8 @@ contract EVoting is Ownable {
     event ElectionCreated(uint256 indexed electionId, string title);
     event ElectionStarted(uint256 indexed electionId);
     event ElectionEnded(uint256 indexed electionId);
+    event ElectionReset(uint256 indexed electionId);
+    event ElectionFinalized(uint256 indexed electionId);
     event VoteCasted(uint256 indexed electionId, uint256 indexed candidateId);
     event HumanityVerified(address indexed voter);
     event AuthorityAdded(address indexed authority);
@@ -176,73 +189,77 @@ contract EVoting is Ownable {
         emit ElectionEnded(_electionId);
     }
 
-    // ✅ VERIFY HUMANITY: 5 public signals
-    // [0] = human_score, [1] = uniqueness_score, [2] = behavior_proof, [3] = timestamp, [4] = user_identifier
+    function resetElection(uint256 _electionId) external onlyAuthority {
+        require(elections[_electionId].state == ElectionState.Ended, "Election must be ended first");
+        elections[_electionId].state = ElectionState.Pending;
+        delete votes[_electionId];
+        
+        // Reset vote counts
+        for (uint256 i = 0; i < elections[_electionId].candidateCount; i++) {
+            candidates[_electionId][i].voteCount = 0;
+        }
+        
+        emit ElectionReset(_electionId);
+    }
+
+    function finalizeElection(uint256 _electionId) external onlyAuthority {
+        require(elections[_electionId].state == ElectionState.Ended, "Election must be ended first");
+        elections[_electionId].state = ElectionState.Finalized;
+        emit ElectionFinalized(_electionId);
+    }
+
+    // ==========================================
+    // ✅ VERIFY HUMANITY (Updated)
+    // ==========================================
     function verifyHumanity(
         uint[2] memory a,
         uint[2][2] memory b,
         uint[2] memory c,
-        uint[5] memory _publicSignals
+        uint[3] memory _publicSignals // [Hash, Timestamp, UserID, behavior]
     ) external {
         require(humanityVerifier.verifyProof(a, b, c, _publicSignals), "Invalid humanity proof");
+        
+        // Opsional: Cek apakah UserID di proof cocok dengan msg.sender
+        // require(_publicSignals[2] == uint256(uint160(msg.sender)), "User ID mismatch");
+
         humanVerified[msg.sender] = true;
         emit HumanityVerified(msg.sender);
     }
 
-    // ✅ VERIFY VOTER ELIGIBILITY: 1 public signal [election_id]
-    function verifyVoterEligibility(
-        uint256 _electionId,
-        uint[2] memory a,
-        uint[2][2] memory b,
-        uint[2] memory c,
-        uint[1] memory _publicSignals
-    ) external view returns (bool) {
-        require(_publicSignals[0] == _electionId, "Election ID mismatch");
-        return voterVerifier.verifyProof(a, b, c, _publicSignals);
-    }
-
-    // ✅ VERIFY AUTHORITY: 2 public signals [election_id, action_hash]
-    function verifyAuthority(
-        uint256 _electionId,
-        bytes32 _actionHash,
-        uint[2] memory a,
-        uint[2][2] memory b,
-        uint[2] memory c,
-        uint[2] memory _publicSignals
-    ) external view returns (bool) {
-        require(_publicSignals[0] == _electionId, "Election ID mismatch");
-        require(uint256(_actionHash) == _publicSignals[1], "Action hash mismatch");
-        require(authorities[msg.sender], "Not an authority");
-        return authorityVerifier.verifyProof(a, b, c, _publicSignals);
-    }
-
-    // ✅ CAST VOTE: 5 public signals
-    // [0] = commitment, [1] = nullifier, [2] = vote_hash, [3] = election_id, [4] = candidate_id
+    // ==========================================
+    // ✅ CAST VOTE (Updated)
+    // ==========================================
     function castVote(
         uint256 _electionId,
         uint256 _candidateId,
-        bytes memory _nullifier,
+        uint256 _nullifier, // Ubah jadi uint256 biar gampang dicocokkan dengan proof
         uint[2] memory a,
         uint[2][2] memory b,
         uint[2] memory c,
-        uint[5] memory _publicSignals
+        uint[4] memory _publicSignals // [Nullifier, VoteHash, ElectionID, CandidateID]
     ) external electionActive(_electionId) onlyIfHumanityRequired(_electionId) {
         require(_candidateId < elections[_electionId].candidateCount, "Invalid candidate");
-        require(!usedNullifiers[_nullifier], "Vote already cast");
+        require(!usedNullifiers[_electionId][_nullifier], "Vote already cast");
         
-        // ✅ Verify ZK proof
-        require(voteVerifier.verifyProof(a, b, c, _publicSignals), "Invalid vote proof");
+        // ✅ Verify ZK Proof Logic
+        // 1. Cek Election ID cocok
+        require(_publicSignals[2] == _electionId, "Election ID mismatch in proof");
         
-        // Verify public signals match
-        require(_publicSignals[3] == _electionId, "Election ID mismatch in proof");
-        require(_publicSignals[4] == _candidateId, "Candidate ID mismatch in proof");
+        // 2. Cek Candidate ID cocok
+        require(_publicSignals[3] == _candidateId, "Candidate ID mismatch in proof");
 
-        // Record vote
-        usedNullifiers[_nullifier] = true;
+        // 3. Cek Nullifier cocok dengan input argumen
+        require(_publicSignals[0] == _nullifier, "Nullifier mismatch");
+
+        // 4. Verifikasi Matematika Groth16
+        require(voteVerifier.verifyProof(a, b, c, _publicSignals), "Invalid vote proof");
+
+        // Record Vote
+        usedNullifiers[_electionId][_nullifier] = true;
+        
         votes[_electionId].push(Vote({
-            nullifier: _nullifier,
+            nullifier: abi.encodePacked(_nullifier),
             candidateId: _candidateId,
-            proof: "",
             timestamp: block.timestamp
         }));
         candidates[_electionId][_candidateId].voteCount++;

@@ -1,53 +1,38 @@
 pragma circom 2.0.0;
 
 include "circomlib/circuits/poseidon.circom";
-include "circomlib/circuits/comparators.circom";
 
-// Circuit to verify valid vote without revealing voter identity
-// Proves: voter is eligible AND vote is for valid candidate
 template VoteCasting() {
-    // Public inputs
-    signal input commitment;
-    signal input nullifier;
-    signal input vote_hash; // hash(candidate_id, encrypted_data)
+    // Private Inputs (Rahasia user)
+    signal input voter_id;    // ID Pemilih
+    signal input secret;      // PIN/Password rahasia pemilih
+
+    // Public Inputs (Data Pemilu)
     signal input election_id;
-    
-    // Private inputs
-    signal input voter_id;
-    signal input secret;
     signal input candidate_id;
-    signal input candidate_count;
     
-    signal output vote_commitment;
+    // Output signals
+    signal output nullifier;  // Penanda agar tidak bisa vote 2x
+    signal output vote_hash;  // Bukti suara sah
+
+    // 1. Generate Nullifier
+    // Nullifier = Hash(voter_id, election_id, secret)
+    // Ini unik per user per pemilu. Jika user vote lagi, nullifier akan sama & ditolak contract.
+    component nullifierHasher = Poseidon(3);
+    nullifierHasher.inputs[0] <== voter_id;
+    nullifierHasher.inputs[1] <== election_id;
+    nullifierHasher.inputs[2] <== secret;
     
-    // Step 1: Verify voter commitment is valid
-    component verify_commitment = Poseidon(2);
-    verify_commitment.inputs[0] <== voter_id;
-    verify_commitment.inputs[1] <== secret;
-    
-    // Ensure commitment matches
-    verify_commitment.out === commitment;
-    
-    // Step 2: Verify nullifier
-    component verify_nullifier = Poseidon(3);
-    verify_nullifier.inputs[0] <== voter_id;
-    verify_nullifier.inputs[1] <== election_id;
-    verify_nullifier.inputs[2] <== secret;
-    
-    verify_nullifier.out === nullifier;
-    
-    // Step 3: Verify candidate_id is valid (between 0 and candidate_count-1)
-    signal valid_candidate <== LessThan(32)([candidate_id, candidate_count]);
-    valid_candidate === 1;
-    
-    // Step 4: Create vote commitment (prevents modification)
-    component vote_commitment_hash = Poseidon(4);
-    vote_commitment_hash.inputs[0] <== voter_id;
-    vote_commitment_hash.inputs[1] <== candidate_id;
-    vote_commitment_hash.inputs[2] <== election_id;
-    vote_commitment_hash.inputs[3] <== secret;
-    
-    vote_commitment <== vote_commitment_hash.out;
+    nullifier <== nullifierHasher.out;
+
+    // 2. Generate Vote Hash (Commitment)
+    // Vote Hash = Hash(candidate_id, nullifier)
+    // Mengikat pilihan suara dengan nullifier
+    component voteHasher = Poseidon(2);
+    voteHasher.inputs[0] <== candidate_id;
+    voteHasher.inputs[1] <== nullifier;
+
+    vote_hash <== voteHasher.out;
 }
 
-component main { public [commitment, nullifier, vote_hash, election_id] } = VoteCasting();
+component main { public [election_id, candidate_id] } = VoteCasting();

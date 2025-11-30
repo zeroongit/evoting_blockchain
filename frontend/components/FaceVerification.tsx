@@ -2,13 +2,15 @@
 
 import { useState, useRef, useCallback } from "react";
 import Webcam from "react-webcam";
-import { generateProof } from "@/lib/zk";
+// UPDATE: Import fungsi spesifik dari zk.ts
+import { generateHumanityProof } from "@/lib/zk";
 
 interface FaceVerificationProps {
     onVerified: (proof: any) => void;
+    userAddress?: string; // Optional: untuk mengikat proof ke wallet address
 }
 
-export default function FaceVerification({ onVerified}: FaceVerificationProps) {
+export default function FaceVerification({ onVerified, userAddress = "0" }: FaceVerificationProps) {
     const webcamRef = useRef<Webcam>(null);
     const [step, setStep] = useState<"IDLE" | "SCANNING" | "ANALYZING" | "SUCCESS" | "ERROR">("IDLE");
     const [imgSrc, setImgSrc] = useState<string | null>(null);
@@ -22,15 +24,16 @@ export default function FaceVerification({ onVerified}: FaceVerificationProps) {
             setImgSrc(imageSrc);
             setStep("ANALYZING");
             processFaceData();
-
         }
     }, [webcamRef]);
 
     async function processFaceData() {
         try  {
             addLog("🔍 Menganalisis fitur wajah...");
+            // Simulasi delay scanning
             await new Promise((r) => setTimeout(r, 1500));
 
+            // Simulasi nilai AI Face Recognition
             const humanScore = Math.floor(Math.random() * (100-75) + 75);
             const uniqueScore = Math.floor(Math.random() * (100-85) + 85);
             const behaviorScore = Math.floor(Math.random() * (100-65) + 65);
@@ -39,40 +42,50 @@ export default function FaceVerification({ onVerified}: FaceVerificationProps) {
             addLog(`✅ Uniqueness Check: ${uniqueScore}%`);
 
             await new Promise((r) => setTimeout(r, 1000));
-            addLog("🔐 Membuat ZK-Proof (Proof of Humanity)...")
+            addLog("🔐 Membuat ZK-Proof (Proof of Humanity) di Browser...");
 
+            // UPDATE: Input data sesuai dengan zk.ts
             const input = {
                 human_score: humanScore,
                 uniqueness_score: uniqueScore,
                 behavior_proof: behaviorScore,
                 timestamp: Math.floor(Date.now() / 1000),
-                user_identifier: 123456
+                user_identifier: userAddress // Menggunakan address user agar proof tidak bisa dicuri
             };
 
-            const result = await generateProof('humanity', input);
+            // UPDATE: Panggil fungsi generateHumanityProof langsung
+            const result = await generateHumanityProof(input);
+            
             addLog("🎉 ZK-Proof berhasil dibuat!");
             setStep("SUCCESS");
+            
+            // Kirim hasil proof ke parent component (page.tsx)
             onVerified(result);
+
         } catch (error: any) {
             console.error(error);
             setStep("ERROR");
-            addLog("❌ Gagal: " + error.message);
+            addLog("❌ Gagal: " + (error.message || "Unknown error"));
         }
     }
     
     return (
         <div className="flex flex-col items-center w-full max-w-md mx-auto bg-black p-4 rounded-xl shadow-2xl overflow-hidden">
-            <div className="relative w-full aspect-video bg-gray-900 reounded-lg overflow-hidden border-2 border-gray-700">
+            {/* Typos fixed below: reounded -> rounded, border colors adjusted */}
+            <div className="relative w-full aspect-video bg-gray-900 rounded-lg overflow-hidden border-2 border-gray-700">
                 {step === "IDLE" || step === "SCANNING" ? (
                     <>
                         <Webcam
                             audio={false}
                             ref={webcamRef}
                             screenshotFormat="image/jpeg"
-                            className="w-full h-full obkect-cover transform scale-x-[-1]" />
+                            // Typo fixed: obkect -> object
+                            className="w-full h-full object-cover transform scale-x-[-1]" 
+                        />
 
                         <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-48 h-64 border-2 broder-cyan-400 rounnded-3xl opacity-70 boorder-dashed animate-pulse"></div>
+                            {/* Typos fixed: broder->border, rounnded->rounded, boorder->border */}
+                            <div className="w-48 h-64 border-2 border-cyan-400 rounded-3xl opacity-70 border-dashed animate-pulse"></div>
                         </div>
                         <div className="absolute bottom-2 left-0 right-0 text-center">
                             <span className="bg-black/50 text-white px-2 py-1 text-xs rounded">Pastikan wajah terlihat jelas</span>
@@ -88,7 +101,7 @@ export default function FaceVerification({ onVerified}: FaceVerificationProps) {
                 {logs.map((log, i) => (
                     <p key={i}> {log} </p>
                 ))}
-                {step === "ANALYZING" && <p className="animate-pulse">Processing</p>}
+                {step === "ANALYZING" && <p className="animate-pulse">Processing ZK Circuits...</p>}
             </div>
 
             <div className="mt-4 w-full">
@@ -106,8 +119,9 @@ export default function FaceVerification({ onVerified}: FaceVerificationProps) {
                 )}
 
                 {step === "ERROR" && (
+                    // Typo fixed: bg-reg-600 -> bg-red-600
                     <button onClick={() => setStep("IDLE")}
-                    className="w-full bg-reg-600 text-white font-bold py-3 rounded">
+                    className="w-full bg-red-600 text-white font-bold py-3 rounded">
                         Coba Lagi
                     </button>
                 )}
