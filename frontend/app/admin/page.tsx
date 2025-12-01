@@ -25,9 +25,12 @@ export default function AdminPage() {
     try {
       const publicClient = createPublicClient({ chain: sepolia, transport: http() });
       
+      // ✅ FIX: Gunakan .EVoting agar mengambil string alamat, bukan object
+      const contractAddress = NEXT_PUBLIC_EVOTING_ADDRESS.EVoting as `0x${string}`;
+
       // 1. Cek apakah address ini terdaftar sebagai Authority di Smart Contract
       const isAuth = await publicClient.readContract({
-        address: NEXT_PUBLIC_EVOTING_ADDRESS as `0x${string}`,
+        address: contractAddress, 
         abi: EVOTING_ABI,
         functionName: "authorities",
         args: [address],
@@ -38,7 +41,7 @@ export default function AdminPage() {
       if (isAuth) {
         // 2. Jika Admin, ambil status pemilu saat ini (Election ID 0)
         const electionData: any = await publicClient.readContract({
-          address: NEXT_PUBLIC_EVOTING_ADDRESS as `0x${string}`,
+          address: contractAddress,
           abi: EVOTING_ABI,
           functionName: "getElection",
           args: [BigInt(0)],
@@ -63,8 +66,11 @@ export default function AdminPage() {
         transport: custom((window as any).ethereum),
       });
 
+      // ✅ FIX: Gunakan .EVoting di sini juga
+      const contractAddress = NEXT_PUBLIC_EVOTING_ADDRESS.EVoting as `0x${string}`;
+
       const hash = await walletClient.writeContract({
-        address: NEXT_PUBLIC_EVOTING_ADDRESS as `0x${string}`,
+        address: contractAddress,
         abi: EVOTING_ABI,
         functionName: functionName,
         args: [BigInt(0)], // Election ID 0
@@ -78,9 +84,10 @@ export default function AdminPage() {
       await publicClient.waitForTransactionReceipt({ hash });
 
       setStatusMsg("✅ Berhasil!");
+      
+      // Refresh status setelah sukses
       setTimeout(() => {
         setStatusMsg("");
-        // Refresh status
         checkAuthority(userAddress);
       }, 2000);
 
