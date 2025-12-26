@@ -3,12 +3,14 @@ export const EVOTING_ABI = EVotingArtifact.abi;
 // Contoh file: src/utils/contractAddress.ts atau constants.js
 
 export const NEXT_PUBLIC_EVOTING_ADDRESS = {
-  EVoting: "0xd015d39a472d7d9e1ec5f8d857605ff88ebaabf1",
-  VoterVerifier: "0xa8b942ce0a60e9c9a890db696f53ec8fc0d1a85f",
-  VoteVerifier: "0x8393511ac0d21a1ad3266825077df4cec53fd73a",
-  HumanityVerifier: "0xdd30eb631ce84295820d5607d912a79d445899e3",
-  AuthorityVerifier: "0xab8c31c3e6ebf9b6a14d4d007b02a79368f8d7ac"
-};
+  EVoting: "0xb7895b6d0e75468c0e82518b5d7b83c73566898d",
+  VoterVerifier: "0x3ebd1f697fe9a2142b60390ae80b016c10526f5a",
+  VoteVerifier: "0x4e31f3c10f21232c1af39efceae4beb6ac846b79",
+  HumanityVerifier: "0x1b4486beb5819bdba1bb628d7b92245cadf6d6aa",
+  AuthorityVerifier: "0x4a9b431363f23bc11cc7548c674c4e01a552c17a"
+
+}
+
 
 // Pastikan juga meng-update ABI (Application Binary Interface)
 // jika kamu ada mengubah isi file .sol sebelumnya.
