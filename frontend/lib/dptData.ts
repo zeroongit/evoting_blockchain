@@ -22,5 +22,12 @@ export const DPT_DATABASE = [
     status: "WNI",
     usia: 45,
     valid: true
+  },
+  {
+    nik: "3302021503990999",
+    nama: "Andi Wijaya",
+    status: "WNI",
+    usia: 21,
+    valid: false
   }
 ];
