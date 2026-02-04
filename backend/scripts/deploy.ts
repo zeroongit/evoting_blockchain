@@ -86,11 +86,7 @@ async function main() {
   
   console.log("✅ Candidates added!");
 
-  // C. (Opsional) Langsung Start Election agar siap dipakai
-  console.log("- Starting Election...");
-  const startTx = await evoting.write.startElection([BigInt(0)]);
-  await publicClient.waitForTransactionReceipt({ hash: startTx });
-  console.log("✅ Election STARTED! (State: Active)");
+
 
   // --- 4. Output Data untuk Frontend ---
   const deploymentData = {

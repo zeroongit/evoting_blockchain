@@ -9,12 +9,12 @@ import { NEXT_PUBLIC_EVOTING_ADDRESS, EVOTING_ABI } from "@/lib/constants";
 export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [userAddress, setUserAddress] = useState("");
-  const [electionState, setElectionState] = useState<number | null>(null); // 0: Pending, 1: Active, 2: Ended, 3: Finalized
+  const [electionState, setElectionState] = useState<number | null>(null); 
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState("");
   const [txHash, setTxHash] = useState("");
 
-  // Cek Status Admin & Status Pemilu saat wallet connect
+
   useEffect(() => {
     if (userAddress) {
       checkAuthority(userAddress);
@@ -104,8 +104,6 @@ export default function AdminPage() {
       case 0: return "bg-yellow-500";
       case 1: return "bg-green-500";
       case 2: return "bg-red-500";
-      case 3: return "bg-blue-500";
-      default: return "bg-gray-500";
     }
   };
 
@@ -114,8 +112,6 @@ export default function AdminPage() {
       case 0: return "PENDING (Belum Dimulai)";
       case 1: return "ACTIVE (Sedang Berjalan)";
       case 2: return "ENDED (Selesai)";
-      case 3: return "FINALIZED (Final/Terkunci)";
-      default: return "UNKNOWN";
     }
   };
 
@@ -191,31 +187,10 @@ export default function AdminPage() {
                   </button>
                 )}
 
-                {/* RESET & FINALIZE (when ended) */}
                 {electionState === 2 && (
-                  <>
-                    <button
-                      onClick={() => sendContractAction("resetElection", "🔄 Mereset Pemilu...")}
-                      disabled={loading}
-                      className="w-full bg-yellow-600 hover:bg-yellow-700 disabled:bg-yellow-800 text-white font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95 disabled:opacity-50"
-                    >
-                      🔄 RESET KE PENDING
-                    </button>
-                    <button
-                      onClick={() => sendContractAction("finalizeElection", "🔒 Finalisasi Pemilu...")}
-                      disabled={loading}
-                      className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95 disabled:opacity-50"
-                    >
-                      🔒 FINALISASI (TERKUNCI)
-                    </button>
-                  </>
-                )}
-
-                {/* FINALIZED STATE */}
-                {electionState === 3 && (
-                  <div className="text-center p-4 bg-blue-700/30 border border-blue-500 rounded-xl text-blue-200 font-bold">
-                    🔒 PEMILU FINALIZED <br/>
-                    <span className="text-xs font-normal">Hasil sudah final dan TIDAK dapat direset.</span>
+                  <div className="text-center p-4 bg-gray-700 border border-gray-500 rounded-xl text-gray-300 font-bold">
+                    🏁 PEMILU TELAH BERAKHIR <br/>
+                    <span className="text-xs font-normal">Pemilihan sudah ditutup secara permanen.</span>
                   </div>
                 )}
               </div>

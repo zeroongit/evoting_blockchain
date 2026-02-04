@@ -15,6 +15,7 @@
     "@types/snarkjs": "^0.7.9",
     "forge-std": "github:foundry-rs/forge-std#v1.9.4",
     "hardhat": "^3.0.15",
+    "snarkjs": "^0.7.6",
     "typescript": "~5.8.0",
     "viem": "^2.39.3"
   },
@@ -26,7 +27,6 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "ipfs-http-client": "^60.0.1",
-    "poseidon-encryption": "^1.0.2",
-    "snarkjs": "^0.7.5"
+    "poseidon-encryption": "^1.0.2"
   }
 }

@@ -3,9 +3,6 @@ pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-// ==========================================
-// ✅ INTERFACES (Disesuaikan dengan Sirkuit Baru)
-// ==========================================
 
 // 1. ProofOfHuman: 4 Public Signals 
 // (OutputHash, Timestamp, UserIdentifier, +1 extra/dummy from libraries usually)
@@ -189,24 +186,6 @@ contract EVoting is Ownable {
         emit ElectionEnded(_electionId);
     }
 
-    function resetElection(uint256 _electionId) external onlyAuthority {
-        require(elections[_electionId].state == ElectionState.Ended, "Election must be ended first");
-        elections[_electionId].state = ElectionState.Pending;
-        delete votes[_electionId];
-        
-        // Reset vote counts
-        for (uint256 i = 0; i < elections[_electionId].candidateCount; i++) {
-            candidates[_electionId][i].voteCount = 0;
-        }
-        
-        emit ElectionReset(_electionId);
-    }
-
-    function finalizeElection(uint256 _electionId) external onlyAuthority {
-        require(elections[_electionId].state == ElectionState.Ended, "Election must be ended first");
-        elections[_electionId].state = ElectionState.Finalized;
-        emit ElectionFinalized(_electionId);
-    }
 
     // ==========================================
     // ✅ VERIFY HUMANITY (Updated)
