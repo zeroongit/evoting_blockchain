@@ -1,14 +1,14 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  webpack: (config) => {
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      fs: false,
-      readline: false,
-    };
-    return config;
+// next.config.js
+module.exports = {
+  experimental: {
+    turbopack: {
+      rules: {
+        // Pindahkan aturan webpack kamu ke sini
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
   },
-};
-
-export default nextConfig;
+}
