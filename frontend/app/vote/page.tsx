@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image"; // ✅ Import Image Next.js
+import Image from "next/image"; 
 import { createWalletClient, custom, http, createPublicClient } from "viem";
 import { sepolia } from "viem/chains";
 import WalletButton from "@/components/WalletButton";

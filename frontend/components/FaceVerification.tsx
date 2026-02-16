@@ -28,6 +28,9 @@ export default function FaceVerification({ userAddress, onVerified }: FaceVerifi
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockReason, setBlockReason] = useState("");
 
+  const [simulasiNik, setSimulasiNik] = useState("");
+  const [simulasiNama, setSimulasiNama] = useState("");
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -63,6 +66,33 @@ export default function FaceVerification({ userAddress, onVerified }: FaceVerifi
     checkUserStatus();
     return () => stopCamera();
   }, [userAddress]);
+
+  const handleTambahSimulasi = () => {
+    if (!simulasiNik || simulasiNik.length < 16) {
+      alert("NIK simulasi harus 16 digit!");
+      return;
+    }
+
+    // Cek apakah NIK sudah ada
+    const exists = DPT_DATABASE.find((u) => u.nik === simulasiNik);
+    if (exists) {
+      alert("NIK tersebut sudah ada di DPT!");
+      return;
+    }
+
+    // Push data baru ke array DPT secara langsung (di memori)
+    DPT_DATABASE.push({
+      nik: simulasiNik,
+      nama: simulasiNama || "Pemilih Simulasi",
+      status: "WNI",
+      usia: 20,
+      valid: true
+    });
+
+    alert(`Berhasil! NIK ${simulasiNik} telah ditambahkan ke DPT.`);
+    setSimulasiNik('');
+    setSimulasiNama('');
+  };
 
   // --- 🛡️ LAPIS 2: CEK NIK (NULLIFIER) ---
   const handleCheckNIK = async () => {
@@ -249,6 +279,38 @@ export default function FaceVerification({ userAddress, onVerified }: FaceVerifi
             </button>
         </div>
         <div className="mt-4 text-[10px] text-gray-600 text-center font-mono">SECURITY: L1(WALLET) • L2(NULLIFIER) • L3(BIOMETRIC)</div>
+
+        <div className="mt-8 p-5 border-2 border-dashed border-gray-600 rounded-xl bg-gray-800/50">
+          <p className="text-sm font-bold text-white mb-1">Tambah DPT Simulasi</p>
+          <p className="text-xs text-gray-400 italic mb-4">
+            *Note: Masukkan data bebas untuk keperluan simulasi. Data hilang jika web di-refresh.
+          </p>
+
+          <div className="flex flex-col gap-3">
+            <input
+              type="text"
+              placeholder="Masukkan NIK Baru (16 Digit)"
+              value={simulasiNik}
+              onChange={(e) => setSimulasiNik(e.target.value.replace(/[^0-9]/g, ''))}
+              maxLength={16}
+              className="w-full bg-black border border-gray-600 rounded-lg p-3 text-white text-sm outline-none focus:border-cyan-500"
+            />
+            <input
+              type="text"
+              placeholder="Masukkan Nama (Opsional)"
+              value={simulasiNama}
+              onChange={(e) => setSimulasiNama(e.target.value)}
+              className="w-full bg-black border border-gray-600 rounded-lg p-3 text-white text-sm outline-none focus:border-cyan-500"
+            />
+            <button
+              onClick={handleTambahSimulasi}
+              disabled={simulasiNik.length < 16}
+              className="w-full bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white font-bold py-3 rounded-lg text-sm transition-colors border border-gray-500"
+            >
+              + Tambahkan ke DPT
+            </button>
+          </div>
+        </div>
       </div>
     );
   }

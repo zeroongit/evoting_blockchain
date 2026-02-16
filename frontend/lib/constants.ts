@@ -11,6 +11,3 @@ export const NEXT_PUBLIC_EVOTING_ADDRESS = {
 }
 
 
-// Pastikan juga meng-update ABI (Application Binary Interface)
-// jika kamu ada mengubah isi file .sol sebelumnya.
-// Copy file JSON dari folder: artifacts/contracts/EVoting.sol/EVoting.json
