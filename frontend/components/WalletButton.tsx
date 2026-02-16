@@ -23,7 +23,7 @@ export default function WalletButton({ onConnect }: WalletButtonProps) {
         metadata: {
           name: "Bilik Suara Digital",
           description: "Aplikasi E-Voting ZK-SNARK",
-          url: "https://evoting-skripsi.vercel.app", // Ganti dengan URL Vercel kamu
+          url: "https://evoting-blockchain.vercel.app", // Ganti dengan URL Vercel kamu
           icons: ["https://avatars.githubusercontent.com/u/37784886"]
         }
       });
@@ -54,7 +54,7 @@ export default function WalletButton({ onConnect }: WalletButtonProps) {
     <button 
       onClick={connectWallet}
       disabled={loading}
-      className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold py-4 px-10 rounded-full shadow-lg transition-all text-xl"
+      className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold py-3 px-6 sm:py-4 sm:px-10 rounded-full shadow-lg transition-all text-base sm:text-xl w-full sm:w-auto"
     >
       {loading ? "Membuka Dompet..." : "Hubungkan Identitas (Wallet)"}
     </button>

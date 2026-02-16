@@ -216,7 +216,7 @@ export default function VotePage() {
 
         {/* --- STEP 1: CONNECT WALLET --- */}
         {step === "CONNECT" && (
-          <div className="flex flex-col items-center justify-center space-y-6 bg-gray-800 p-12 rounded-2xl border border-gray-700 max-w-lg mx-auto">
+          <div className="flex flex-col items-center justify-center space-y-4 sm:space-y-6 bg-gray-800 p-6 sm:p-12 rounded-2xl border border-gray-700 max-w-lg mx-auto w-full">
             <div className="text-6xl animate-bounce-slow">🔐</div>
             <h2 className="text-2xl font-bold">Login Pemilih</h2>
             <p className="text-gray-400 text-center">
