@@ -25,6 +25,7 @@ export default function VotePage() {
   const [selectedCandidate, setSelectedCandidate] = useState<number | null>(null);
   const [circuitsReady, setCircuitsReady] = useState(false);
   const [voterNik, setVoterNik] = useState("");
+  const [walletProvider, setWalletProvider] = useState<any>(null);
 
   // 1. Cek Ketersediaan Sirkuit ZK
   useEffect(() => {
@@ -84,7 +85,7 @@ export default function VotePage() {
       setStatusMsg("✍️ Meminta Tanda Tangan di Wallet...");
       const walletClient = createWalletClient({
         chain: sepolia,
-        transport: custom((window as any).ethereum),
+        transport: custom(walletProvider ||(window as any).ethereum),
       });
       await checkAndSwitchNetwork(walletClient);
       const [address] = await walletClient.getAddresses();
@@ -162,7 +163,7 @@ export default function VotePage() {
       setStatusMsg("✍️ Mengirim Suara ke Blockchain...");
       const walletClient = createWalletClient({
         chain: sepolia,
-        transport: custom((window as any).ethereum),
+        transport: custom(walletProvider ||(window as any).ethereum),
       });
       await checkAndSwitchNetwork(walletClient);
       const [address] = await walletClient.getAddresses();
@@ -221,8 +222,9 @@ export default function VotePage() {
             <p className="text-gray-400 text-center">
               Scan QR / Hubungkan Wallet untuk mengakses terminal.
             </p>
-            <WalletButton onConnect={(addr)=>{
+            <WalletButton onConnect={(addr, provider)=>{
               setUserAddress(addr); 
+              setWalletProvider(provider); 
               setStep("VERIFY_FACE");
             }} />
           </div>

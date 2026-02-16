@@ -267,9 +267,17 @@ export default function FaceVerification({ userAddress, onVerified }: FaceVerifi
             <p className="text-gray-400 text-sm">Masukkan NIK untuk pengecekan 3 Lapis Keamanan.</p>
         </div>
         <div className="space-y-6 flex-grow flex flex-col justify-center">
-            <input 
-                type="text" maxLength={16} value={nik}
-                onChange={(e) => setNik(e.target.value.replace(/[^0-9]/g, ''))}
+          <input 
+                type="text" 
+                inputMode="numeric"
+                maxLength={16} 
+                value={nik}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (/^\d*$/.test(val)) {
+                    setNik(val);
+                  }
+                }}
                 placeholder="Masukkan NIK"
                 className="w-full bg-black border-2 border-gray-600 rounded-xl p-5 text-white text-2xl tracking-[0.3em] text-center font-mono outline-none focus:border-cyan-500 transition-all"
                 disabled={checkingNik}
@@ -289,9 +297,15 @@ export default function FaceVerification({ userAddress, onVerified }: FaceVerifi
           <div className="flex flex-col gap-3">
             <input
               type="text"
+              inputMode="numeric" 
               placeholder="Masukkan NIK Baru (16 Digit)"
               value={simulasiNik}
-              onChange={(e) => setSimulasiNik(e.target.value.replace(/[^0-9]/g, ''))}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (/^\d*$/.test(val)) {
+                  setSimulasiNik(val);
+                }
+              }}
               maxLength={16}
               className="w-full bg-black border border-gray-600 rounded-lg p-3 text-white text-sm outline-none focus:border-cyan-500"
             />
