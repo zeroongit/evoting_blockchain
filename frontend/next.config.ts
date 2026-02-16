@@ -1,14 +1,30 @@
-// next.config.js
-module.exports = {
-  experimental: {
-    turbopack: {
-      rules: {
-        // Pindahkan aturan webpack kamu ke sini
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  // Matikan fitur experimental Turbopack yang menyebabkan crash
+  // experimental: { turbopack: ... } <-- pastikan ini TIDAK ADA
+
+  webpack: (config, { isServer }) => {
+    // Konfigurasi WAJIB untuk library ZK-Proof (snarkjs) di Next.js
+    if (!isServer) {
+      config.resolve.fallback = {
+        fs: false,
+        path: false,
+        os: false,
+        crypto: false,
+        readline: false,
+      };
+    }
+
+    // Mengizinkan Next.js memproses file WebAssembly (.wasm)
+    config.experiments = {
+      ...config.experiments,
+      asyncWebAssembly: true,
+      layers: true,
+    };
+
+    return config;
   },
-}
+};
+
+export default nextConfig;

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint"
   },
@@ -28,7 +28,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/snarkjs": "^0.7.9",
-    "baseline-browser-mapping": "^2.9.7",
+    "baseline-browser-mapping": "^2.9.19",
     "dotenv": "^17.3.1",
     "eslint": "^9",
     "eslint-config-next": "16.0.3",
