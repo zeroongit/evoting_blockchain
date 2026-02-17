@@ -5,15 +5,15 @@ import { createWalletClient, custom, createPublicClient, http } from "viem";
 import { sepolia } from "viem/chains";
 import WalletButton from "@/components/WalletButton";
 import { NEXT_PUBLIC_EVOTING_ADDRESS, EVOTING_ABI } from "@/lib/constants";
+import { useWallet } from "@/context/WalletContext"; 
 
 export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false);
-  const [userAddress, setUserAddress] = useState("");
   const [electionState, setElectionState] = useState<number | null>(null); 
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState("");
   const [txHash, setTxHash] = useState("");
-
+  const { userAddress, setUserAddress, walletProvider, setWalletProvider } = useWallet(); 
 
   useEffect(() => {
     if (userAddress) {
@@ -25,10 +25,8 @@ export default function AdminPage() {
     try {
       const publicClient = createPublicClient({ chain: sepolia, transport: http() });
       
-      // ✅ FIX: Gunakan .EVoting agar mengambil string alamat, bukan object
       const contractAddress = NEXT_PUBLIC_EVOTING_ADDRESS.EVoting as `0x${string}`;
 
-      // 1. Cek apakah address ini terdaftar sebagai Authority di Smart Contract
       const isAuth = await publicClient.readContract({
         address: contractAddress, 
         abi: EVOTING_ABI,
@@ -39,21 +37,19 @@ export default function AdminPage() {
       setIsAdmin(isAuth);
 
       if (isAuth) {
-        // 2. Jika Admin, ambil status pemilu saat ini (Election ID 0)
         const electionData: any = await publicClient.readContract({
           address: contractAddress,
           abi: EVOTING_ABI,
           functionName: "getElection",
           args: [BigInt(0)],
         });
-        setElectionState(electionData.state); // Enum: 0=Pending, 1=Active, 2=Ended, 3=Finalized
+        setElectionState(electionData.state); 
       }
     } catch (error) {
       console.error("Gagal cek admin:", error);
     }
   }
 
-  // ✅ Fungsi untuk kirim transaksi ke contract
   async function sendContractAction(functionName: "startElection" | "endElection" | "resetElection" | "finalizeElection", displayMsg: string) {
     if (!userAddress) return;
     setLoading(true);
@@ -63,17 +59,17 @@ export default function AdminPage() {
     try {
       const walletClient = createWalletClient({
         chain: sepolia,
-        transport: custom((window as any).ethereum),
+        // 👈 3. Gunakan walletProvider dari Context agar mendukung ekstensi maupun HP
+        transport: custom(walletProvider || (window as any).ethereum),
       });
 
-      // ✅ FIX: Gunakan .EVoting di sini juga
       const contractAddress = NEXT_PUBLIC_EVOTING_ADDRESS.EVoting as `0x${string}`;
 
       const hash = await walletClient.writeContract({
         address: contractAddress,
         abi: EVOTING_ABI,
         functionName: functionName,
-        args: [BigInt(0)], // Election ID 0
+        args: [BigInt(0)], 
         account: userAddress as `0x${string}`,
       });
 
@@ -85,7 +81,6 @@ export default function AdminPage() {
 
       setStatusMsg("✅ Berhasil!");
       
-      // Refresh status setelah sukses
       setTimeout(() => {
         setStatusMsg("");
         checkAuthority(userAddress);
@@ -120,7 +115,13 @@ export default function AdminPage() {
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-10 border-b border-gray-700 pb-6">
           <h1 className="text-3xl font-bold text-yellow-500">KPU Control Panel 🛠️</h1>
-          <WalletButton onConnect={setUserAddress} />
+          {/* 👈 4. Simpan alamat dan provider ke Context saat tombol ditekan */}
+          {!userAddress && (
+             <WalletButton onConnect={(addr, provider) => {
+               setUserAddress(addr);
+               setWalletProvider(provider);
+             }} />
+          )}
         </div>
 
         {!userAddress ? (
@@ -135,7 +136,6 @@ export default function AdminPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             
-            {/* STATUS CARD */}
             <div className="bg-gray-800 p-8 rounded-2xl border border-gray-700">
               <h2 className="text-xl font-bold mb-4 text-gray-400">Status Pemilu Saat Ini</h2>
               <div className="flex items-center gap-3 mb-6">
@@ -149,7 +149,6 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* ACTION CARD */}
             <div className="bg-gray-800 p-8 rounded-2xl border border-gray-700">
               <h2 className="text-xl font-bold mb-4 text-gray-400">Kontrol Pemilihan</h2>
               
@@ -165,7 +164,6 @@ export default function AdminPage() {
               )}
 
               <div className="space-y-3">
-                {/* START BUTTON */}
                 {electionState === 0 && (
                   <button
                     onClick={() => sendContractAction("startElection", "🚀 Memulai Pemilu...")}
@@ -176,7 +174,6 @@ export default function AdminPage() {
                   </button>
                 )}
 
-                {/* END BUTTON */}
                 {electionState === 1 && (
                   <button
                     onClick={() => sendContractAction("endElection", "🛑 Mengakhiri Pemilu...")}
