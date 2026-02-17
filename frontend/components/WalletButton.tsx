@@ -23,32 +23,34 @@ export default function WalletButton({ onConnect }: WalletButtonProps) {
         metadata: {
           name: "Bilik Suara Digital",
           description: "Aplikasi E-Voting ZK-SNARK",
-          url: "https://evoting-blockchain.vercel.app", // Ganti dengan URL Vercel kamu
+          url: "https://evoting-blockchain.vercel.app", 
           icons: ["https://avatars.githubusercontent.com/u/37784886"]
         }
       });
 
-      // 2. Munculkan Pop-up WalletConnect
-      await provider.connect(); 
+      try {
+            await provider.connect(); 
+        } catch (connectError) {
+            // Jika gagal connect karena sesi nyangkut, paksa disconnect dulu
+            console.warn("Membersihkan sesi lama...", connectError);
+            await provider.disconnect();
+            await provider.connect(); // Coba hubungkan ulang
+        }
 
-      // 3. Ambil Address dan kirim ke page.tsx beserta provider-nya
-      const walletClient = createWalletClient({
-        chain: sepolia,
-        transport: custom(provider)
-      });
+        const walletClient = createWalletClient({
+            chain: sepolia,
+            transport: custom(provider)
+        });
 
-      const [address] = await walletClient.getAddresses();
-      
-      // Kirim address dan instance provider ke atas
-      onConnect(address, provider); 
+        const [address] = await walletClient.getAddresses();
+        onConnect(address, provider); 
 
-    } catch (error) {
-      console.error("Gagal connect wallet:", error);
-      alert("Koneksi dibatalkan atau gagal.");
-    } finally {
-      setLoading(false);
-    }
-  };
+        } catch (error) {
+        console.error("Gagal connect wallet:", error);
+        } finally {
+        setLoading(false);
+        }
+    };
 
   return (
     <button 
