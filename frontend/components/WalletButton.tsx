@@ -11,52 +11,35 @@ interface WalletButtonProps {
 
 export default function WalletButton({ onConnect }: WalletButtonProps) {
   const [loading, setLoading] = useState(false);
-  const [method, setMethod] = useState("");
+  const [loadingText, setLoadingText] = useState("");
 
-  // 1. FUNGSI UNTUK EKSTENSI BROWSER (Chrome/Firefox)
-  const connectInjected = async () => {
+  const connectSmartWallet = async () => {
     setLoading(true);
-    setMethod("injected");
+    
     try {
-      // Cek apakah ekstensi terpasang di browser
-      if (typeof window === "undefined" || !(window as any).ethereum) {
-        alert("🦊 Ekstensi MetaMask tidak terdeteksi di browser ini! Silakan gunakan opsi WalletConnect atau buka dari browser bawaan MetaMask.");
-        return;
-      }
-      
-      const ethProvider = (window as any).ethereum;
-      
-      // Meminta izin koneksi ke ekstensi
-      await ethProvider.request({ method: 'eth_requestAccounts' });
-      
-      const walletClient = createWalletClient({
-        chain: sepolia,
-        transport: custom(ethProvider)
-      });
+      // CEK KONDISI 1: Apakah ada dompet lokal (Ekstensi PC atau In-App Browser)?
+      if (typeof window !== "undefined" && (window as any).ethereum) {
+        setLoadingText("Membuka Dompet Lokal...");
+        const ethProvider = (window as any).ethereum;
+        
+        // Minta izin ke ekstensi/dompet lokal
+        await ethProvider.request({ method: 'eth_requestAccounts' });
+        
+        const walletClient = createWalletClient({
+          chain: sepolia,
+          transport: custom(ethProvider)
+        });
 
-      const [address] = await walletClient.getAddresses();
-      
-      // Kirim provider ekstensi browser ke page.tsx
-      onConnect(address, ethProvider);
-      
-    } catch (error: any) {
-      console.error("Gagal connect extension:", error);
-      if (error.code === 4001) {
-        alert("Koneksi ditolak oleh pengguna.");
+        const [address] = await walletClient.getAddresses();
+        onConnect(address, ethProvider);
+        return; // Hentikan fungsi di sini agar tidak lanjut ke WalletConnect
       }
-    } finally {
-      setLoading(false);
-      setMethod("");
-    }
-  };
 
-  // 2. FUNGSI UNTUK WALLETCONNECT (Mobile/QR Code)
-  const connectWC = async () => {
-    setLoading(true);
-    setMethod("wc");
-    try {
+      // CEK KONDISI 2: Jika tidak ada dompet lokal, otomatis gunakan WalletConnect
+      setLoadingText("Membuka WalletConnect...");
+      
       const provider = await EthereumProvider.init({
-        projectId: "ee5cc44d6958f7a79fc4d378c980b362", 
+        projectId: "ee5cc44d6958f7a79fc4d378c980b362", // <--- PASTIKAN ISI PROJECT ID KAMU DI SINI
         showQrModal: true,
         chains: [sepolia.id],
         rpcMap: {
@@ -84,47 +67,27 @@ export default function WalletButton({ onConnect }: WalletButtonProps) {
       });
 
       const [address] = await walletClient.getAddresses();
-      
-      // Kirim provider WalletConnect ke page.tsx
       onConnect(address, provider); 
-      
-    } catch (error) {
-      console.error("Gagal connect WalletConnect:", error);
+
+    } catch (error: any) {
+      console.error("Gagal connect wallet:", error);
+      if (error.code === 4001) {
+        alert("Koneksi ditolak oleh pengguna.");
+      }
     } finally {
       setLoading(false);
-      setMethod("");
+      setLoadingText("");
     }
   };
 
-  // --- RENDER UI: 2 TOMBOL PILIHAN ---
   return (
-    <div className="flex flex-col gap-4 w-full">
-      {/* Tombol Ekstensi Browser */}
-      <button 
-        onClick={connectInjected}
-        disabled={loading}
-        className="bg-[#F6851B] hover:bg-[#e2761b] text-white font-bold py-3 px-6 sm:py-4 rounded-xl shadow-lg transition-all text-sm sm:text-lg w-full flex items-center justify-center gap-3 disabled:opacity-50"
-      >
-        <span className="text-2xl">🦊</span>
-        {loading && method === "injected" ? "Membuka Ekstensi..." : "Ekstensi Browser (PC)"}
-      </button>
-
-      {/* Garis Pemisah (Divider) */}
-      <div className="flex items-center gap-3 my-1 opacity-70">
-        <hr className="flex-grow border-gray-500" />
-        <span className="text-xs text-gray-400 font-mono tracking-widest">ATAU</span>
-        <hr className="flex-grow border-gray-500" />
-      </div>
-
-      {/* Tombol WalletConnect */}
-      <button 
-        onClick={connectWC}
-        disabled={loading}
-        className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 sm:py-4 rounded-xl shadow-lg transition-all text-sm sm:text-lg w-full flex items-center justify-center gap-3 disabled:opacity-50"
-      >
-        <span className="text-2xl">📱</span>
-        {loading && method === "wc" ? "Membuka QR..." : "WalletConnect (HP / QR)"}
-      </button>
-    </div>
+    <button 
+      onClick={connectSmartWallet}
+      disabled={loading}
+      className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold py-4 px-8 sm:px-12 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all text-base sm:text-xl w-full sm:w-auto flex items-center justify-center gap-3 disabled:opacity-70"
+    >
+      <span className="text-2xl">🔐</span>
+      {loading ? loadingText : "Hubungkan Identitas (Wallet)"}
+    </button>
   );
 }
