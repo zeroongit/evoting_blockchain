@@ -14,18 +14,20 @@ import {
   checkCircuitsAvailability 
 } from "@/lib/zk"; 
 import { keccak256, toBytes } from "viem";
+import { useWallet } from "@/context/WalletContext";
 
 type VotingStep = "CONNECT" | "VERIFY_FACE" | "SUBMIT_VERIFICATION" | "SELECT_CANDIDATE" | "SUBMIT_VOTE" | "DONE";
 
 export default function VotePage() {
+//  const [userAddress, setUserAddress] = useState("");
+  const { userAddress, setUserAddress, walletProvider, setWalletProvider } = useWallet();
   const [step, setStep] = useState<VotingStep>("CONNECT");
-  const [userAddress, setUserAddress] = useState("");
   const [statusMsg, setStatusMsg] = useState("");
   const [txHash, setTxHash] = useState("");
   const [selectedCandidate, setSelectedCandidate] = useState<number | null>(null);
   const [circuitsReady, setCircuitsReady] = useState(false);
   const [voterNik, setVoterNik] = useState("");
-  const [walletProvider, setWalletProvider] = useState<any>(null);
+//  const [walletProvider, setWalletProvider] = useState<any>(null);
 
   // 1. Cek Ketersediaan Sirkuit ZK
   useEffect(() => {

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar"; // Import Navbar
+import Navbar from "@/components/Navbar";
+import { WalletProvider } from "@/context/WalletContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,11 +19,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        <WalletProvider>
         {/* Pasang Navbar di sini, di atas children */}
-        <Navbar />
+          <Navbar />
+          {children}
+        </WalletProvider>
         
         {/* Konten halaman akan muncul di bawah Navbar */}
-        {children}
       </body>
     </html>
   );
