@@ -1,0 +1,39 @@
+# ==========================================
+# STAGE 1: BUILDER
+# ==========================================
+FROM golang:1.25-alpine AS builder
+
+# Install SSL CA Certificates
+RUN apk add --no-cache ca-certificates
+
+WORKDIR /app
+
+# Copy Dependency Files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy All Source Code
+COPY . .
+
+# Build Binary secara statis dan ringkas
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags="-w -s" -o server-voting ./cmd/api/main.go
+
+# ==========================================
+# STAGE 2: FINAL MINIMAL IMAGE
+# ==========================================
+FROM alpine:latest
+
+WORKDIR /app
+
+# Copy CA Certificates dari builder (agar bisa HTTPS Call ke Avalanche / Gemini)
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+# Copy Binary dari tahap builder ke stage final
+COPY --from=builder /app/server-voting .
+
+# BERIKAN IZIN EKSEKUSI SECARA EKSPLISIT
+RUN chmod +x ./server-voting
+
+EXPOSE 8080
+
+CMD ["./server-voting"]

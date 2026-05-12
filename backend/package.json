@@ -27,6 +27,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "ipfs-http-client": "^60.0.1",
+    "openzeppelin": "^1.0.0",
     "poseidon-encryption": "^1.0.2"
   }
 }
