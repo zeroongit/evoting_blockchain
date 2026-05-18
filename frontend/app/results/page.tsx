@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { createPublicClient, http } from "viem";
-import { sepolia } from "viem/chains";
-import Image from "next/image"; // Import Image untuk foto
+import { avalancheFuji } from "viem/chains";
+import Image from "next/image"; 
 import { NEXT_PUBLIC_EVOTING_ADDRESS, EVOTING_ABI } from "@/lib/constants";
 import { candidateData as staticCandidateData } from "@/lib/candidateData"; 
 
@@ -28,7 +28,7 @@ export default function ResultsPage() {
     try {
       // Setup Client (Bypass Cache agar data akurat)
       const publicClient = createPublicClient({ 
-        chain: sepolia, 
+        chain: avalancheFuji, 
         transport: http(),
         batch: { multicall: false },
       });
@@ -50,7 +50,7 @@ export default function ResultsPage() {
 
       const candidateCount = Number(electionInfo.candidateCount);
       let tempTotal = 0;
-      let tempResults: CandidateResult[] = [];
+      const tempResults: CandidateResult[] = [];
 
       // 2. Loop Data Kandidat
       for (let i = 0; i < candidateCount; i++) {
@@ -69,7 +69,7 @@ export default function ResultsPage() {
         const staticData = staticCandidateData[i] || { 
           name: `Kandidat #${i+1}`, 
           color: "bg-gray-500",
-          avatar: "/images/placeholder.png" // Fallback image jika tidak ada
+          avatar: "https://picsum.photos/seed/placeholder/300/400"
         };
 
         tempResults.push({
@@ -78,7 +78,7 @@ export default function ResultsPage() {
           voteCount: votes,
           percentage: 0,
           color: staticData.color || "bg-blue-500",
-          avatar: staticData.image || "/images/placeholder.png",
+          avatar: staticData.image,
         });
       }
 
@@ -119,7 +119,7 @@ export default function ResultsPage() {
             <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
               Hasil Hitung Suara 📊
             </h1>
-            <p className="text-gray-400 mt-2">Real Count Terverifikasi Blockchain Sepolia</p>
+            <p className="text-gray-400 mt-2">Real Count Terverifikasi Avalanche Fuji Testnet</p>
           </div>
 
           <div className="flex flex-col items-end gap-2">
@@ -176,6 +176,7 @@ export default function ResultsPage() {
                     fill
                     className="object-cover object-top"
                     sizes="(max-width: 768px) 100vw, 33vw"
+                    referrerPolicy="no-referrer"
                   />
                   {/* Overlay Gradient bawah */}
                   <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 to-transparent"></div>
@@ -221,11 +222,12 @@ export default function ResultsPage() {
           <div className="flex justify-center items-center gap-2 mt-2 text-xs text-gray-600 font-mono">
              <span>Contract: {NEXT_PUBLIC_EVOTING_ADDRESS.EVoting}</span>
              <a 
-               href={`https://sepolia.etherscan.io/address/${NEXT_PUBLIC_EVOTING_ADDRESS.EVoting}`}
+               href={`https://testnet.snowtrace.io/address/${NEXT_PUBLIC_EVOTING_ADDRESS.EVoting}`}
                target="_blank"
+               rel="noreferrer"
                className="text-blue-500 hover:underline"
              >
-               (View on Etherscan)
+               (View on Snowtrace)
              </a>
           </div>
         </div>

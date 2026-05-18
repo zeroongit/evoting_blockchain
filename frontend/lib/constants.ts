@@ -1,5 +1,4 @@
-import EVotingArtifact from './abi/EVoting.json';
-export const EVOTING_ABI = EVotingArtifact.abi;
+import EVotingJSON from './abi/EVoting.json';
 // Contoh file: src/utils/contractAddress.ts atau constants.js
 
 export const NEXT_PUBLIC_EVOTING_ADDRESS = {
@@ -11,3 +10,4 @@ export const NEXT_PUBLIC_EVOTING_ADDRESS = {
 }
 
 
+export const EVOTING_ABI = EVotingJSON;

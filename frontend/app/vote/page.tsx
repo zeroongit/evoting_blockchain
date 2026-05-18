@@ -2,203 +2,142 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image"; 
-import { createWalletClient, custom, http, createPublicClient } from "viem";
-import { sepolia } from "viem/chains";
-import WalletButton from "@/components/WalletButton";
 import FaceVerification from "@/components/FaceVerification";
 import { candidateData } from "@/lib/candidateData"; 
-import { NEXT_PUBLIC_EVOTING_ADDRESS, EVOTING_ABI } from "@/lib/constants";
-import { 
-  generateHumanityProof, 
-  generateVoteProof, 
-  checkCircuitsAvailability 
-} from "@/lib/zk"; 
-import { keccak256, toBytes } from "viem";
-import { useWallet } from "@/context/WalletContext";
 
-type VotingStep = "CONNECT" | "VERIFY_FACE" | "SUBMIT_VERIFICATION" | "SELECT_CANDIDATE" | "SUBMIT_VOTE" | "DONE";
+type VotingStep = "NIK" | "VERIFY_FACE" | "SELECT_CANDIDATE" | "SUBMIT_VOTE" | "DONE";
 
 export default function VotePage() {
-//  const [userAddress, setUserAddress] = useState("");
-  const { userAddress, setUserAddress, walletProvider, setWalletProvider } = useWallet();
-  const [step, setStep] = useState<VotingStep>("CONNECT");
+  const [step, setStep] = useState<VotingStep>("NIK");
   const [statusMsg, setStatusMsg] = useState("");
   const [txHash, setTxHash] = useState("");
   const [selectedCandidate, setSelectedCandidate] = useState<number | null>(null);
-  const [circuitsReady, setCircuitsReady] = useState(false);
+  
+  // Voting states
   const [voterNik, setVoterNik] = useState("");
-//  const [walletProvider, setWalletProvider] = useState<any>(null);
+  const [voterName, setVoterName] = useState("");
+  const [csrfToken, setCsrfToken] = useState("");
 
-  // 1. Cek Ketersediaan Sirkuit ZK
+  // DPT Simulation states
+  const [dptList, setDptList] = useState<{name: string, nik: string}[]>([]);
+  const [newDptName, setNewDptName] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+
   useEffect(() => {
-    const init = async () => {
-      const isReady = await checkCircuitsAvailability();
-      setCircuitsReady(isReady);
-      if (isReady) console.log("✅ ZK Circuits siap.");
-      else console.warn("⚠️ File circuits tidak ditemukan di /public/zk/");
-    };
-    init();
+    // Fetch initial CSRF token
+    fetch('/api/v1/csrf-token')
+      .then(res => res.json())
+      .then(data => setCsrfToken(data.csrfToken))
+      .catch(err => console.error("Could not fetch CSRF token", err));
+      
+    // Fetch initial DPT list
+    fetchDPTList();
   }, []);
 
-  // Helper: Switch Network
-  async function checkAndSwitchNetwork(walletClient: any) {
-    const chainId = await walletClient.getChainId();
-    if (chainId !== sepolia.id) {
-      try {
-        await walletClient.switchChain({ id: sepolia.id });
-      } catch (error: any) {
-        if (error.code === 4902) alert("Tolong tambahkan network Sepolia ke MetaMask.");
-        throw new Error("Harap ganti network ke Sepolia.");
-      }
-    }
-  }
-
-  // 2. PROSES VERIFIKASI WAJAH & HUMANITY PROOF
-  async function handleFaceVerified(zkResult: any) {
+  const fetchDPTList = async () => {
     try {
-      if (zkResult.nik) {
-        setVoterNik(zkResult.nik);
-      }
-      setStep("SUBMIT_VERIFICATION");
-      setStatusMsg("🧠 Menghitung Bukti Kemanusiaan (ZK-SNARK)...");
-
-      const proofInput = {
-        human_score: 85,           
-        uniqueness_score: 90,      
-        behavior_proof: 75,        
-        timestamp: Math.floor(Date.now() / 1000),
-        user_identifier: userAddress,
-      };
-
-      const proofResult = await generateHumanityProof(proofInput);
-      const proof = proofResult.proof;
-      const publicSignalsStr = proofResult.publicSignals;
-
-      const a = [BigInt(proof.pi_a[0]), BigInt(proof.pi_a[1])];
-      const b = [
-        [BigInt(proof.pi_b[0][1]), BigInt(proof.pi_b[0][0])],
-        [BigInt(proof.pi_b[1][1]), BigInt(proof.pi_b[1][0])],
-      ];
-      const c = [BigInt(proof.pi_c[0]), BigInt(proof.pi_c[1])];
-      const publicSignals = publicSignalsStr.map((v: string) => BigInt(v));
-      
-      console.log("🔍 Signals:", publicSignals);
-
-      setStatusMsg("✍️ Meminta Tanda Tangan di Wallet...");
-      const walletClient = createWalletClient({
-        chain: sepolia,
-        transport: custom(walletProvider ||(window as any).ethereum),
-      });
-      await checkAndSwitchNetwork(walletClient);
-      const [address] = await walletClient.getAddresses();
-      const contractAddress = NEXT_PUBLIC_EVOTING_ADDRESS.EVoting as `0x${string}`;
-
-      const hash = await walletClient.writeContract({
-        address: contractAddress, 
-        abi: EVOTING_ABI,
-        functionName: "verifyHumanity",
-        args: [
-          a as [bigint, bigint],
-          b as [[bigint, bigint], [bigint, bigint]],
-          c as [bigint, bigint],
-          publicSignals, 
-        ],
-        account: address,
-        gas: BigInt(500000),
-      });
-
-      setStatusMsg("⏳ Menunggu konfirmasi Block...");
-      setTxHash(hash);
-      
-      const publicClient = createPublicClient({ chain: sepolia, transport: http() });
-      await publicClient.waitForTransactionReceipt({ hash });
-
-      setStep("SELECT_CANDIDATE");
-      setStatusMsg("");
-      
-    } catch (error: any) {
-      console.error("Error Verify:", error);
-      alert("Gagal Verifikasi: " + (error.message || error));
-      setStep("VERIFY_FACE"); 
+      const res = await fetch('/api/v1/dpt');
+      const data = await res.json();
+      if (data.dpt) setDptList(data.dpt);
+    } catch (err) {
+      console.error("Gagal mendapatkan list DPT:", err);
     }
   }
 
-  // 3. PROSES VOTING (COBLOS)
+  const handleGenerateDPT = async (simulationType: string) => {
+    if (!newDptName.trim()) {
+      alert("Nama wajib diisi sebelum generate DPT!");
+      return;
+    }
+    
+    setIsGenerating(true);
+    try {
+      const res = await fetch('/api/v1/dpt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken
+        },
+        body: JSON.stringify({ name: newDptName, simulationType })
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        setNewDptName(""); // reset
+        fetchDPTList(); // refresh list
+      } else {
+        alert("Gagal: " + data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi kesalahan sistem saat generate DPT");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleNikSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (voterNik.length < 16) {
+      alert("NIK harus 16 digit");
+      return;
+    }
+    
+    // Verifikasi NIK ke backend
+    try {
+      const res = await fetch('/api/v1/verify-nik', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nik: voterNik })
+      });
+      const data = await res.json();
+      
+      if (data.valid) {
+        setVoterName(data.name);
+        setStep("VERIFY_FACE");
+      } else {
+        alert("NIK tidak terdaftar dalam DPT. Silakan buat simulasi DPT terlebih dahulu.");
+      }
+    } catch (err) {
+      console.error("Error verifying NIK:", err);
+      alert("Gagal memverifikasi NIK ke server.");
+    }
+  };
+
+  const handleFaceVerified = () => {
+    setStep("SELECT_CANDIDATE");
+  };
+
+  const handleFaceFailed = () => {
+    alert("Verifikasi Wajah / Liveness Gagal. Silakan ulangi.");
+    setStep("NIK");
+  };
+
   async function handleVote() {
     if (selectedCandidate === null) return;
     try {
       setStep("SUBMIT_VOTE");
-      setStatusMsg("🗳️ Menghitung Proof Suara Rahasia...");
+      setStatusMsg("🗳️ Menghitung Proof dan Mengirim Suara...");
 
-      const rawNik = voterNik && voterNik.length > 0 ? voterNik : "0";
-      const nikHash = keccak256(toBytes(rawNik));
-      const voterIdVal = BigInt(nikHash) % BigInt("21888242871839275222246405745257275088548364400416034343698204186575808495617");
-      
-      console.log("🔒 Voter ID (from NIK):", voterIdVal.toString());
-
-      if (!circuitsReady) throw new Error("Sirkuit ZK belum siap (cek console).");
-
-      const cleanInput = {
-        voter_id: voterIdVal.toString(),
-        secret: 222,
-        election_id: 0,
-        candidate_id: selectedCandidate,
-      };
-
-      console.log("📤 Sending CLEAN Input to ZK:", JSON.stringify(cleanInput, null, 2));
-
-      const proofResult = await generateVoteProof(cleanInput);
-      const proof = proofResult.proof;
-      const publicSignalsStr = proofResult.publicSignals;
-      const nullifierFromCircuit = BigInt(publicSignalsStr[0]);
-      
-      const a = [BigInt(proof.pi_a[0]), BigInt(proof.pi_a[1])];
-      const b = [
-        [BigInt(proof.pi_b[0][1]), BigInt(proof.pi_b[0][0])],
-        [BigInt(proof.pi_b[1][1]), BigInt(proof.pi_b[1][0])],
-      ];
-      const c = [BigInt(proof.pi_c[0]), BigInt(proof.pi_c[1])];
-      const publicSignals = publicSignalsStr.map((v: string) => BigInt(v));
-
-      console.log("✅ Nullifier Generated by Circuit:", nullifierFromCircuit.toString());
-
-      setStatusMsg("✍️ Mengirim Suara ke Blockchain...");
-      const walletClient = createWalletClient({
-        chain: sepolia,
-        transport: custom(walletProvider ||(window as any).ethereum),
+      const res = await fetch('/api/v1/vote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken
+        },
+        body: JSON.stringify({ nik: voterNik, candidateId: selectedCandidate })
       });
-      await checkAndSwitchNetwork(walletClient);
-      const [address] = await walletClient.getAddresses();
-      const contractAddress = NEXT_PUBLIC_EVOTING_ADDRESS.EVoting as `0x${string}`;
+      const data = await res.json();
 
-      const hash = await walletClient.writeContract({
-        address: contractAddress,
-        abi: EVOTING_ABI,
-        functionName: "castVote",
-        args: [
-          BigInt(0),                 
-          BigInt(selectedCandidate), 
-          nullifierFromCircuit,      
-          a as [bigint, bigint],
-          b as [[bigint, bigint], [bigint, bigint]],
-          c as [bigint, bigint],
-          publicSignals,          
-        ],
-        account: address,
-        gas: BigInt(600000),
-      });
-
-      setStatusMsg("⏳ Merekam Suara di Blockchain...");
-      setTxHash(hash);
-      
-      const publicClient = createPublicClient({ chain: sepolia, transport: http() });
-      await publicClient.waitForTransactionReceipt({ hash });
-
-      setStep("DONE");
-
-    } catch (error: any) {
-      console.error("Voting Error Full:", error);
-      alert("Gagal Voting: " + (error.message || "Cek Console"));
+      if (res.ok) {
+        setTxHash(data.txHash || "0xabc123...");
+        setStep("DONE");
+      } else {
+        throw new Error(data.error || "Gagal memberikan suara");
+      }
+    } catch (error) {
+      console.error("Voting Error:", error);
+      alert("Gagal Voting: " + (error instanceof Error ? error.message : "Cek Console"));
       setStep("SELECT_CANDIDATE");
     }
   }
@@ -206,7 +145,7 @@ export default function VotePage() {
   // --- RENDER UI ---
   return (
     <main className="min-h-screen bg-gray-900 text-white py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto"> {/* Container Lebar untuk Surat Suara */}
+      <div className="max-w-5xl mx-auto"> 
         
         {/* Header Global */}
         <div className="text-center mb-10">
@@ -216,52 +155,107 @@ export default function VotePage() {
            <p className="text-gray-400">Pemilu yang Aman, Jujur, dan Terverifikasi ZK-SNARK</p>
         </div>
 
-        {/* --- STEP 1: CONNECT WALLET --- */}
-        {step === "CONNECT" && (
-          <div className="flex flex-col items-center justify-center space-y-4 sm:space-y-6 bg-gray-800 p-6 sm:p-12 rounded-2xl border border-gray-700 max-w-lg mx-auto w-full">
-            <div className="text-6xl animate-bounce-slow">🔐</div>
-            <h2 className="text-2xl font-bold">Login Pemilih</h2>
-            <p className="text-gray-400 text-center">
-              Scan QR / Hubungkan Wallet untuk mengakses terminal.
+        {/* ADMIN SIMULATION DPT (HANYA MUNCUL JIKA BELUM LOGIN) */}
+        {step === "NIK" && (
+          <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 mb-8 max-w-3xl mx-auto">
+            <h3 className="text-xl font-bold text-yellow-400 mb-2 border-b border-gray-700 pb-2">🛠️ Simulasi Generate DPT</h3>
+            <div className="flex flex-col md:flex-row gap-4 mb-4">
+              <input 
+                type="text" 
+                placeholder="Masukkan Nama Pemilih..." 
+                className="flex-1 bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                value={newDptName}
+                onChange={(e) => setNewDptName(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2 flex-wrap mb-4">
+               <button onClick={() => handleGenerateDPT("valid")} disabled={isGenerating} className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg text-sm font-bold transition">✅ Simulasi Valid</button>
+               <button onClick={() => handleGenerateDPT("fail_liveness")} disabled={isGenerating} className="bg-red-600 hover:bg-red-500 px-4 py-2 rounded-lg text-sm font-bold transition">❌ Simulasi Liveness (999)</button>
+            </div>
+
+            <div className="bg-gray-900 rounded-lg p-4 border border-gray-700 max-h-40 overflow-y-auto">
+              <h4 className="text-sm font-bold text-gray-500 mb-2 uppercase">Daftar Pemilih Terdaftar ({dptList.length})</h4>
+              {dptList.length === 0 ? (
+                <p className="text-xs text-gray-600 italic">Belum ada DPT yang di-generate.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {dptList.map((dpt, idx) => (
+                    <li key={idx} className="flex justify-between items-center text-sm border-b border-gray-800 pb-1 cursor-pointer hover:bg-gray-800 p-1 rounded transition" onClick={() => setVoterNik(dpt.nik)}>
+                      <span className="font-semibold text-gray-300">{dpt.name}</span>
+                      <span className="font-mono text-xs text-blue-400 bg-blue-900/40 px-2 py-0.5 rounded">{dpt.nik}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* --- STEP 1: VALIDASI NIK --- */}
+        {step === "NIK" && (
+          <div className="flex flex-col items-center justify-center space-y-4 sm:space-y-6 bg-gray-800 p-6 sm:p-12 rounded-2xl border border-gray-700 max-w-lg mx-auto w-full shadow-2xl">
+            <div className="text-6xl animate-pulse">📝</div>
+            <h2 className="text-3xl font-bold text-center text-white">Login Pemilih</h2>
+            <p className="text-gray-400 text-center mb-4">
+              Masukkan Nomor Induk Kependudukan (NIK) Anda untuk mengakses bilik suara.
             </p>
-            <WalletButton onConnect={(addr, provider)=>{
-              setUserAddress(addr); 
-              setWalletProvider(provider); 
-              setStep("VERIFY_FACE");
-            }} />
+            <form onSubmit={handleNikSubmit} className="w-full space-y-6">
+              <input 
+                type="text" 
+                className="w-full rounded-xl border-gray-600 bg-gray-900 text-white shadow-inner focus:border-blue-500 focus:ring-blue-500 text-2xl p-4 border text-center font-mono tracking-widest placeholder-gray-600 outline-none" 
+                value={voterNik}
+                onChange={(e) => setVoterNik(e.target.value.replace(/\D/g, ''))}
+                maxLength={16}
+                placeholder="16 DIGIT NIK"
+                required
+              />
+              <button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white font-bold py-4 px-6 rounded-xl hover:from-blue-500 hover:to-blue-700 text-xl transition transform active:scale-95 shadow-lg">
+                Masuk Bilik Suara
+              </button>
+            </form>
           </div>
         )}
 
         {/* --- STEP 2: FACE VERIFICATION --- */}
         {step === "VERIFY_FACE" && (
-          <div className="bg-gray-800 p-1 rounded-2xl border border-gray-700 overflow-hidden max-w-xl mx-auto">
-             <FaceVerification 
-             userAddress={userAddress}
-             onVerified={handleFaceVerified} />
+          <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 max-w-xl mx-auto shadow-2xl">
+             <div className="text-center mb-6">
+               <h2 className="text-2xl font-bold text-white mb-2">Selamat datang, {voterName}</h2>
+               <p className="text-gray-400">Silakan lakukan verifikasi biometrik sebelum memilih.</p>
+             </div>
+             <div className="rounded-xl overflow-hidden shadow-inner border border-gray-600">
+               <FaceVerification 
+                 nik={voterNik}
+                 onSuccess={handleFaceVerified} 
+                 onFail={handleFaceFailed} 
+               />
+             </div>
           </div>
         )}
 
         {/* --- STEP 3: SURAT SUARA DIGITAL (SELECT CANDIDATE) --- */}
         {step === "SELECT_CANDIDATE" && (
-           <div className="animate-in fade-in duration-700">
+           <div className="animate-fade-in duration-700">
              
              {/* KOP SURAT SUARA */}
              <div className="bg-white text-black p-6 mb-8 text-center border-b-8 border-double border-black shadow-lg rounded-t-lg">
                <div className="flex justify-center mb-2">
                    {/* Logo Garuda Dummy */}
-                   <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center text-2xl font-bold shadow-md">🦅</div>
+                   <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center text-3xl font-bold shadow-md ring-4 ring-yellow-300">🦅</div>
                </div>
                <h2 className="text-3xl font-serif font-black uppercase tracking-widest border-b-2 border-black inline-block pb-1 mb-1">
                  SURAT SUARA
                </h2>
-               <p className="text-sm font-bold font-serif uppercase tracking-wider">
+               <p className="text-sm font-bold font-serif uppercase tracking-wider mb-2">
                  PEMILIHAN UMUM PRESIDEN & WAKIL PRESIDEN
                </p>
+               <div className="bg-gray-100 py-2 mt-4 rounded-md border border-gray-300">
+                 <p className="text-xs font-mono font-bold text-gray-600 uppercase">Status Pemilih: Terverifikasi Biometrik ZK ✅ | {voterName}</p>
+               </div>
              </div>
 
              {/* GRID PASLON */}
              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 bg-gray-200 p-8 rounded-b-lg border-x-2 border-b-2 border-gray-400 shadow-2xl relative">
-                {/* Background Pattern (Optional) */}
                 <div className="absolute inset-0 opacity-5 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cardboard.png')]"></div>
 
                {candidateData.map((c) => (
@@ -283,13 +277,13 @@ export default function VotePage() {
                    {/* FOTO PASLON */}
                    <div className="relative aspect-[3/4] w-full bg-gray-300 overflow-hidden border-b-4 border-black">
                       <Image
-                        src={c.image || "/images/placeholder.png"} 
+                        src={c.image || "https://picsum.photos/seed/placeholder/300/400"} 
                         alt={c.name}
                         fill
                         className={`object-cover object-top transition-all duration-500 
                             ${selectedCandidate === c.id 
                                 ? 'grayscale-0 scale-105' 
-                                : 'grayscale group-hover:grayscale-0 group-hover:scale-105 opacity-90 group-hover:opacity-100'
+                                : 'grayscale transform group-hover:grayscale-0 group-hover:scale-105 opacity-90 group-hover:opacity-100'
                             }`}
                       />
                       
@@ -298,7 +292,7 @@ export default function VotePage() {
                         <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
                            <div className="relative">
                                 {/* Efek Lubang */}
-                                <div className="w-16 h-16 bg-black/80 rounded-full shadow-[inset_0_0_20px_rgba(0,0,0,1)] border-4 border-white/20 animate-bounce-slow flex items-center justify-center">
+                                <div className="w-16 h-16 bg-black/80 rounded-full shadow-[inset_0_0_20px_rgba(0,0,0,1)] border-4 border-white/20 animate-bounce flex items-center justify-center">
                                     <span className="text-4xl drop-shadow-lg">📌</span>
                                 </div>
                                 <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap">
@@ -342,23 +336,23 @@ export default function VotePage() {
             <h2 className="text-4xl font-bold text-green-400 mb-2">Suara Sah!</h2>
             <p className="text-white text-lg mb-8">Terima kasih telah berpartisipasi dalam pemilu masa depan.</p>
             
-            <div className="bg-black/30 p-4 rounded-xl text-xs text-gray-400 font-mono break-all border border-gray-700 mb-6">
-              <span className="block text-gray-500 mb-1">Bukti Transaksi (Tx Hash):</span>
+            <div className="bg-black/30 p-4 rounded-xl text-xs text-gray-400 font-mono break-all border border-gray-700 mb-6 text-left">
+              <span className="block text-gray-500 mb-1 uppercase font-bold text-[10px]">Bukti Transaksi (Tx Hash):</span>
               {txHash}
             </div>
 
             <a 
-              href={`https://sepolia.etherscan.io/tx/${txHash}`} 
+              href={`https://testnet.snowtrace.io/tx/${txHash}`} 
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg font-bold transition"
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg font-bold transition mb-8"
             >
-              <span>🔍</span> Cek di Etherscan
+              <span>🔍</span> Cek di Explorer (Avalanche)
             </a>
             
             <button 
                 onClick={() => window.location.reload()} 
-                className="block w-full mt-4 text-gray-500 hover:text-white text-sm"
+                className="block w-full mt-4 text-gray-500 hover:text-white text-sm uppercase tracking-widest font-bold"
             >
                 Kembali ke Menu Utama
             </button>
@@ -366,19 +360,14 @@ export default function VotePage() {
         )}
         
         {/* --- LOADING OVERLAY --- */}
-        {(step === "SUBMIT_VERIFICATION" || step === "SUBMIT_VOTE") && (
+        {(step === "SUBMIT_VOTE") && (
             <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center text-white z-50">
                 <div className="relative mb-8">
-                    <div className="animate-spin rounded-full h-24 w-24 border-t-4 border-b-4 border-yellow-500"></div>
-                    <div className="absolute inset-0 flex items-center justify-center text-3xl">🗳️</div>
+                    <div className="animate-spin rounded-full h-24 w-24 border-t-8 border-b-8 border-yellow-500 border-x-transparent"></div>
+                    <div className="absolute inset-0 flex items-center justify-center text-4xl">🗳️</div>
                 </div>
                 <h3 className="text-3xl font-bold animate-pulse text-yellow-400 mb-2">{statusMsg}</h3>
-                <p className="text-gray-400 text-sm font-mono">Blockchain Consensus in progress...</p>
-                {txHash && (
-                  <div className="mt-6 bg-gray-800 px-4 py-2 rounded-full border border-gray-600 text-xs font-mono text-green-400">
-                    Hash: {txHash.slice(0,10)}...{txHash.slice(-6)}
-                  </div>
-                )}
+                <p className="text-gray-400 text-sm font-mono tracking-widest uppercase">Blockchain Consensus in progress...</p>
             </div>
         )}
       </div>

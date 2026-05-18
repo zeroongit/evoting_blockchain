@@ -1,14 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import WalletButton from "./WalletButton";
-import { useWallet } from "@/context/WalletContext"; 
+import { usePathname } from "next/navigation"; 
 
 export default function Navbar() {
     const pathname = usePathname();
-
-    const { userAddress, setUserAddress, setWalletProvider } = useWallet();
 
     const navLinks = [
         { name: "Home", href: "/" },
@@ -45,27 +41,6 @@ export default function Navbar() {
                                 </Link>
                             );
                         })}
-                    </div>
-
-                    {/* 👈 3. BAGIAN DOMPET (WALLET) */}
-                    <div className="flex items-center">
-                        {userAddress ? (
-                            // Jika SUDAH login: Tampilkan alamat dompet (warna disesuaikan dengan tema navbar)
-                            <div className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-full font-mono text-sm border border-indigo-200 shadow-sm flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                {userAddress.slice(0, 6)}...{userAddress.slice(-4)}
-                            </div>
-                        ) : (
-                            // Jika BELUM login: Tampilkan tombol WalletButton (diperkecil agar rapi di navbar)
-                            <div className="scale-75 origin-right"> 
-                                <WalletButton 
-                                    onConnect={(addr, provider) => {
-                                        setUserAddress(addr);         // Simpan alamat ke global
-                                        setWalletProvider(provider);  // Simpan provider ke global
-                                    }} 
-                                />
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
