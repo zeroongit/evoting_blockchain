@@ -3,52 +3,86 @@ package handlers
 import (
 	"fmt"
 	"math/rand"
+	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin"
+
 	"vibevote/backend/internal/models"
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 )
 
-type VoterHandler struct {
-	DB *gorm.DB
-}
+func GetVotersHandler(c *gin.Context) {
+	if models.DB == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database not initialized"})
+		return
+	}
 
-func (h *VoterHandler) GetVoters(c *fiber.Ctx) error {
 	var voters []models.Voter
-	h.DB.Find(&voters)
-	return c.JSON(voters)
+	if err := models.DB.Order("created_at desc").Find(&voters).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch voters"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Success", "data": voters})
 }
 
-func (h *VoterHandler) GenerateDPT(c *fiber.Ctx) error {
-	// Hapus data lama jika ingin reset
-	h.DB.Exec("DELETE FROM voters")
+func generateRandomName(rng *rand.Rand) string {
+	firstNames := []string{"Budi", "Siti", "Agus", "Ayu", "Joko", "Dewi", "Eko", "Rini", "Hadi", "Indah", "tuti", "brian", "muhammad"}
+	lastNames := []string{"Santoso", "Sari", "Pratama", "Lestari", "Setiawan", "Wulandari", "Kusuma", "Rahayu", "Putra", "Utami", "rahayu", "putri"}
+	return firstNames[rng.Intn(len(firstNames))] + " " + lastNames[rng.Intn(len(lastNames))]
+}
 
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	var newVoters []models.Voter
+func GenerateDPTHandler(c *gin.Context) {
+	if models.DB == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database not initialized"})
+		return
+	}
 
-	for i := 0; i < 15; i++ {
-		prefix := "3173" // Jakarta Barat
-		randomDigits := fmt.Sprintf("%09d", r.Int63n(1000000000))
-		suffix := fmt.Sprintf("%03d", r.Intn(1000))
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	var generated []models.Voter
+	for i := 0; i < 5; i++ {
+		// Provinsi (2) + Kota/Kab (2) + Kec (2) + Tgl Lahir (6) + Urut (4)
+		// Contoh: 31 71 01 010180 0001
+		baseNIK := fmt.Sprintf("317101%02d%02d%02d", rng.Intn(28)+1, rng.Intn(12)+1, rng.Intn(50)+50)
+		urut := rng.Intn(900) + 1
+
 		suffixType := "normal"
+		suffix := fmt.Sprintf("%04d", urut)
 
-		// Inject data khusus untuk testing
-		if i == 0 {
-			suffix = "999"
+		// Randomly assign special suffix for testing
+		prob := rng.Float32()
+		if prob < 0.2 {
+			suffix = "0999"
 			suffixType = "rejected_999"
-		} else if i == 1 {
-			suffix = "888"
+		} else if prob < 0.4 {
+			suffix = "0888"
 			suffixType = "warning_888"
 		}
 
-		newVoters = append(newVoters, models.Voter{
-			NIK:        prefix + randomDigits + suffix,
-			FullName:   fmt.Sprintf("Dummy Voter %d", i+1),
-			SuffixType: suffixType,
+		nik := baseNIK + suffix
+
+		// If already exists, skip
+		var count int64
+		models.DB.Model(&models.Voter{}).Where("nik = ?", nik).Count(&count)
+		if count > 0 {
+			continue
+		}
+
+		voter := models.Voter{
+			NIK:        nik,
+			FullName:   generateRandomName(rng),
 			IsUsed:     false,
-		})
+			SuffixType: suffixType,
+		}
+
+		models.DB.Create(&voter)
+		generated = append(generated, voter)
 	}
 
-	h.DB.Create(&newVoters)
-	return c.JSON(fiber.Map{"message": "DPT Berhasil di-generate", "count": len(newVoters)})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Successfully generated random DPT",
+		"count":   len(generated),
+		"data":    generated,
+	})
 }

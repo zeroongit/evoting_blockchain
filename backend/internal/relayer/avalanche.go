@@ -23,15 +23,20 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-// CastVoteRelay submits the ZK Proof tx to Avalanche Fuji from the Server-Side using a generic private key
+// Proof is a standard SnarkJS Groth16 proof format mapped to Go big.Int
+type Proof struct {
+	A [2]*big.Int
+	B [2][2]*big.Int
+	C [2]*big.Int
+	PublicSignals []*big.Int
+}
+
+// CastVoteRelay submits the ZK Proof tx to Avalanche Fuji from the Server-Side
 func CastVoteRelay(
 	electionId *big.Int,
 	candidateId *big.Int,
 	nullifier *big.Int,
-	a [2]*big.Int,
-	b [2][2]*big.Int,
-	c [2]*big.Int,
-	publicSignals [4]*big.Int,
+	voteProof Proof,
 ) (string, error) {
 	rpcURL := getEnv("AVALANCHE_RPC_URL", "https://api.avax-test.network/ext/bc/C/rpc")
 	privateKeyHex := os.Getenv("PRIVATE_KEY")
@@ -92,8 +97,22 @@ func CastVoteRelay(
 	    return "", fmt.Errorf("failed to instantiate EVoting contract: %v", err)
 	}
 
-	// Execute castVote transaction using Gasless Relayer pattern
-	tx, err := evotingContract.CastVote(auth, electionId, candidateId, nullifier, a, b, c, publicSignals)
+	// Convert slice to array for the old ABI binding temporarily
+	var pubSignals [4]*big.Int
+	if len(voteProof.PublicSignals) >= 4 {
+		copy(pubSignals[:], voteProof.PublicSignals[:4])
+	}
+
+	// EXECUTE SMART CONTRACT CALL
+	// NOTE: Pembaharuan smart contract ke `abigen` baru diperlukan untuk menerima ke-4 proofs.
+	// Untuk saat ini, agar kode bisa mengkompilasi dengan binding lama Anda, kita hanya pass `voteProof`.
+	tx, err := evotingContract.CastVote(
+		auth, 
+		electionId, 
+		candidateId, 
+		nullifier, 
+		voteProof.A, voteProof.B, voteProof.C, pubSignals,
+	)
 	if err != nil {
 	    return "", fmt.Errorf("failed to cast vote: %v", err)
 	}

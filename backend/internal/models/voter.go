@@ -18,8 +18,3 @@ type Voter struct {
 	UpdatedAt  time.Time      `json:"updated_at"`
 	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
 }
-
-// Function untuk menjalankan migrasi
-func MigrateModels(db *gorm.DB) error {
-	return db.AutoMigrate(&Voter{})
-}
