@@ -16,7 +16,6 @@ export const DPT_DATABASE = [
     valid: true
   },
   {
-    // NIK Dosen Penguji (Opsional, buat gaya-gayaan)
     nik: "1234567890123456",
     nama: "Penguji Terhormat",
     status: "WNI",

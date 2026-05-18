@@ -3,11 +3,11 @@ export const EVOTING_ABI = EVotingArtifact.abi;
 // Contoh file: src/utils/contractAddress.ts atau constants.js
 
 export const NEXT_PUBLIC_EVOTING_ADDRESS = {
-  EVoting: "0x4e2579ac5c58ed0f4f08d5ae67e4279d0a7748ea",
-  VoterVerifier: "0xe607f445c70f0931d191408bf872e9e860bb1464",
-  VoteVerifier: "0x6a352ddfa0bcb91985614bc8f8e3d1d1b1bf1b78",
-  HumanityVerifier: "0x8257fe4f20831e88a4a266c23d0c00c52f33d9b1",
-  AuthorityVerifier: "0xd12b1373f83c90559036d231c95a4835b0791932"
+  EVoting: "0x629de1e8aD0116679dae00C52e3757E47D722b60",
+  VoterVerifier: "0x3149d4c984C99c475f82fAe01d5e86F318497dD6",
+  VoteVerifier: "0x1C61801714C0C5035A3D68203A93A440a37820c8",
+  HumanityVerifier: "0xEFfF43f856f1A7B0742F7bC92032eaBB6cbE4503",
+  AuthorityVerifier: "0x7b247058169b05238dC0698f814a06fe3503c1e7"
 }
 
 
