@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     if (typeof body.votingActive === 'boolean') {
       try {
         const action = body.votingActive ? "start" : "end";
-        const backendRes = await fetch(`http://127.0.0.1:8081/api/v1/admin/${action}`, {
+        const backendRes = await fetch(`${process.env.BACKEND_GO_URL}/admin/${action}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ electionId: 0 })

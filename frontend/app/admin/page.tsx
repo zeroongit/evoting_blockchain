@@ -6,7 +6,7 @@ import { avalancheFuji } from "viem/chains";
 import { NEXT_PUBLIC_EVOTING_ADDRESS, EVOTING_ABI } from "@/lib/constants";
 import { toast } from "sonner";
 
-const API_URL = process.env.BACKEND_GO_URL || "http://127.0.0.1:8080/api/v1";
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_GO_URL;
 
 const publicClient = createPublicClient({ 
   chain: avalancheFuji, 

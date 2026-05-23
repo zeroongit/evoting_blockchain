@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     }
 
     // 3. Ambil URL target dengan fallback yang aman
-    const BACKEND_GO_URL = process.env.BACKEND_GO_URL || "http://127.0.0.1:8080/api/v1/vote";
+    const BACKEND_GO_URL = `${process.env.BACKEND_GO_URL}/vote`;
     // 4. Eksekusi Jembatan Request ke Go Backend dengan Timeout Kontrol
     try {
       const goResponse = await fetch(BACKEND_GO_URL, {
