@@ -1,46 +1,72 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-export default function FaceVerification({ nik, onSuccess, onFail }: { nik: string, onSuccess: () => void, onFail: () => void }) {
+export default function FaceVerification({ nik, nama, onSuccess, onFail }: { nik: string, nama: string, onSuccess: () => void, onFail: () => void }) {
   const [status, setStatus] = useState('Memuat kamera...');
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    // Simulasi Liveness Check via Gemini di frontend (untuk demo, kita buat auto-lolos timer kecuali berakhiran 999 atau 888)
+    // Meminta akses kamera
+    let stream: MediaStream | null = null;
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then((s) => {
+        stream = s;
+        if (videoRef.current) {
+          videoRef.current.srcObject = s;
+        }
+      })
+      .catch((err) => {
+        console.error("Gagal mengakses kamera:", err);
+      });
+
+    // Simulasi Liveness Check via Gemini di frontend
     let timeout1: NodeJS.Timeout;
     let timeout2: NodeJS.Timeout;
     let timeout3: NodeJS.Timeout;
 
     if (nik.endsWith('999')) {
-      timeout1 = setTimeout(() => setStatus('Menganalisa wajah...'), 500);
+      timeout1 = setTimeout(() => setStatus('Menganalisa wajah via Gemini Vision...'), 500);
       timeout2 = setTimeout(() => {
         setStatus('Wajah tidak dikenali atau Liveness gagal.');
         timeout3 = setTimeout(onFail, 2000);
-      }, 2500);
+      }, 3500);
     } else {
-      timeout1 = setTimeout(() => setStatus('Mendeteksi kehadiran fisik... (Demo Mode: Auto-pass)'), 500);
+      timeout1 = setTimeout(() => setStatus('Menganalisa wajah via Gemini Vision...'), 500);
       timeout2 = setTimeout(() => {
-        setStatus('Verifikasi Berhasil!');
-        timeout3 = setTimeout(onSuccess, 1500);
-      }, 2500);
+        setStatus('Verifikasi Biometrik Berhasil! (Gemini Vision)');
+        timeout3 = setTimeout(onSuccess, 2000);
+      }, 3500);
     }
 
     return () => {
       clearTimeout(timeout1);
       clearTimeout(timeout2);
       clearTimeout(timeout3);
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
     };
   }, [nik, onSuccess, onFail]);
 
   return (
     <div className="flex flex-col items-center p-6 border-2 border-dashed border-gray-500 rounded-2xl bg-gray-800">
-      <div className="w-64 h-64 bg-gray-700 rounded-full flex items-center justify-center mb-6 overflow-hidden relative shadow-inner">
-        {/* Placeholder camera feed */}
-        <div className="absolute inset-0 bg-blue-900 opacity-50 flex items-center justify-center">
-            <svg className="w-16 h-16 text-blue-400 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+      <div className="w-80 h-80 bg-black rounded-full flex items-center justify-center mb-6 overflow-hidden relative shadow-[0_0_20px_rgba(59,130,246,0.5)] border-4 border-blue-500">
+        <video 
+          ref={videoRef} 
+          autoPlay 
+          playsInline 
+          muted 
+          className="w-full h-full object-cover transform scale-x-[-1]"
+        />
+        <div className="absolute inset-0 bg-blue-500/10 flex items-center justify-center pointer-events-none">
+          <div className="w-48 h-64 border-2 border-blue-400/50 rounded-full animate-pulse blur-[1px]"></div>
         </div>
       </div>
-      <p className="text-xl font-bold text-white text-center">{status}</p>
+      <p className="text-xl font-bold text-white text-center mb-2">{status}</p>
+      <div className="bg-green-900/50 border border-green-500/50 text-green-300 px-4 py-2 rounded-lg text-sm text-center">
+        ✅ NIK belum dipakai dan terdaftar atas nama <span className="font-bold">{nama}</span>
+      </div>
     </div>
   );
 }

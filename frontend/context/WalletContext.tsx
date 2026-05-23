@@ -5,8 +5,8 @@ import { createContext, useContext, useState, ReactNode } from "react";
 interface WalletContextType {
   userAddress: string;
   setUserAddress: (addr: string) => void;
-  walletProvider: any;
-  setWalletProvider: (provider: any) => void;
+  walletProvider: unknown;
+  setWalletProvider: (provider: unknown) => void;
 }
 
 // Buat Context-nya
@@ -15,7 +15,7 @@ const WalletContext = createContext<WalletContextType | undefined>(undefined);
 // Provider ini yang akan membungkus seluruh aplikasi kita
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [userAddress, setUserAddress] = useState("");
-  const [walletProvider, setWalletProvider] = useState<any>(null);
+  const [walletProvider, setWalletProvider] = useState<unknown>(null);
 
   return (
     <WalletContext.Provider value={{ userAddress, setUserAddress, walletProvider, setWalletProvider }}>

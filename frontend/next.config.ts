@@ -1,8 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Matikan fitur experimental Turbopack yang menyebabkan crash
-  // experimental: { turbopack: ... } <-- pastikan ini TIDAK ADA
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "picsum.photos",
+        port: "",
+        pathname: "/**",
+      },
+    ],
+  
+  },
 
   webpack: (config, { isServer }) => {
     // Konfigurasi WAJIB untuk library ZK-Proof (snarkjs) di Next.js

@@ -1,26 +1,30 @@
 package handlers
 
 import (
+	"evoting_pemilu/internal/models"
 	"fmt"
 	"math/rand"
 	"net/http"
 	"strings"
 	"time"
-	"vibevote/backend/store"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func ListDPT(c *gin.Context) {
-	store.DPTMutex.Lock()
-	defer store.DPTMutex.Unlock()
-	c.JSON(http.StatusOK, gin.H{"dpt": store.DPTStore})
+	var voters []models.Voter
+	if err := models.DB.Order("created_at desc").Find(&voters).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data DPT dari database"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"dpt": voters})
 }
 
 func GenerateDPT(c *gin.Context) {
 	// Check CSRF token header
 	csrfToken := c.GetHeader("X-CSRF-Token")
-	if csrfToken != "mock-csrf-token-12345" {
+	if !validCSRFTokens[csrfToken] {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Invalid CSRF token"})
 		return
 	}
@@ -40,58 +44,44 @@ func GenerateDPT(c *gin.Context) {
 		return
 	}
 
-	store.DPTMutex.Lock()
-	defer store.DPTMutex.Unlock()
-
-	// Cek apakah nama sudah digunakan
-	for _, entry := range store.DPTStore {
-		if strings.EqualFold(entry.Name, req.Name) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Nama sudah terdaftar dalam DPT"})
-			return
-		}
+	// Cek apakah nama sudah digunakan di database (case-insensitive)
+	var existingVoter models.Voter
+	result := models.DB.Where("LOWER(full_name) = LOWER(?)", req.Name).First(&existingVoter)
+	if result.Error == nil {
+		// Jika tidak ada error, berarti data ditemukan
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Nama sudah terdaftar dalam DPT"})
+		return
+	}
+	if result.Error != gorm.ErrRecordNotFound {
+		// Handle error database selain "tidak ditemukan"
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memverifikasi nama di database"})
+		return
 	}
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	var newNik string
-	baseNik := fmt.Sprintf("%013d", rnd.Int63n(1e13)) // 13 digit acak
-	
+	baseNik := fmt.Sprintf("%013d", rnd.Int63n(1e13))
+
+	simulationType := "normal" // default
 	switch req.SimulationType {
 	case "fail_liveness":
 		newNik = baseNik + "999"
+		simulationType = "rejected_999"
 	default:
-		// Normal valid NIK (ends in a random 3 digits not 999 or 888)
 		suffix := rnd.Intn(800) + 100 // 100-899
 		newNik = baseNik + fmt.Sprintf("%03d", suffix)
 	}
 
-	newEntry := store.DPTEntry{
-		Name: req.Name,
-		NIK:  newNik,
+	newVoter := models.Voter{
+		FullName:   req.Name,
+		NIK:        newNik,
+		SuffixType: simulationType, // Simpan tipe simulasi ke DB
 	}
 
-	store.DPTStore = append(store.DPTStore, newEntry)
-	c.JSON(http.StatusOK, gin.H{"dpt": newEntry, "message": "Berhasil membuat DPT baru"})
-}
-
-func VerifyNIK(c *gin.Context) {
-	var req struct {
-		NIK string `json:"nik"`
-	}
-	if err := c.BindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+	if err := models.DB.Create(&newVoter).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan DPT baru ke database"})
 		return
 	}
 
-	store.DPTMutex.Lock()
-	defer store.DPTMutex.Unlock()
-
-	// Cari NIK di DPT
-	for _, entry := range store.DPTStore {
-		if entry.NIK == req.NIK {
-			c.JSON(http.StatusOK, gin.H{"valid": true, "name": entry.Name})
-			return
-		}
-	}
-
-	c.JSON(http.StatusOK, gin.H{"valid": false, "error": "NIK tidak ditemukan dalam DPT"})
+	c.JSON(http.StatusOK, gin.H{"status": "SUCCESS", "dpt": newVoter, "message": "Berhasil membuat DPT baru"})
 }

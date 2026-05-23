@@ -4,7 +4,25 @@ import Link from "next/link";
 import { candidateData } from "@/lib/candidateData";
 import { useState, useEffect } from "react";
 import AOS from "aos";
+// @ts-expect-error - AOS CSS import tidak memiliki deklarasi tipe bawaan
 import "aos/dist/aos.css"; // Import CSS Animasi AOS
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import GradientText from "@/components/GradientText";
+
+// Mendefinisikan tipe data secara ketat untuk menggantikan 'any'
+interface Candidate {
+  id: number;
+  number: string;
+  name: string;
+  color: string;
+  image: string;
+  bgImage?: string;
+  biography: string;
+  programs: string[];
+  achievements: string[];
+}
 
 export default function Home() {
 
@@ -16,104 +34,113 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gray-50 pb-20">
+    <main className="min-h-screen bg-slate-950 pb-20 selection:bg-blue-500/30">
       
       {/* HERO SECTION */}
-      <section className="bg-indigo-900 text-white py-20 px-4 text-center relative overflow-hidden">
-        <div className="max-w-4xl mx-auto relative z-10">
-          {/* Animasi Fade Down untuk Judul */}
-          <h1 
-            data-aos="fade-down" 
-            className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight"
-          >
+      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-slate-950 text-white py-20 px-4 text-center">
+        {/* Glowing Orbs */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-[128px] pointer-events-none"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-[128px] pointer-events-none"></div>
+        
+        <div className="max-w-5xl mx-auto relative z-10 flex flex-col items-center">
+          <div data-aos="fade-down" className="inline-block mb-6 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-md text-sm font-medium text-blue-300">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+              E-Voting Masa Depan
+            </span>
+          </div>
+          
+          <h1 data-aos="fade-down" data-aos-delay="100" className="text-5xl md:text-7xl font-extrabold mb-6 tracking-tight text-white leading-tight">
             Tentukan Masa Depan Bangsa <br />
-            <span className="text-blue-300">Secara Transparan & Aman</span>
+            <GradientText
+              colors={["#38bdf8", "#818cf8", "#c084fc", "#818cf8", "#38bdf8"]}
+              animationSpeed={4}
+              showBorder={false}
+              className="inline-block mt-2 font-extrabold"
+            >
+              Secara Transparan & Aman
+            </GradientText>
           </h1>
           
-          {/* Animasi Fade Up untuk Deskripsi */}
           <p 
             data-aos="fade-up" 
             data-aos-delay="200" 
-            className="text-lg md:text-xl text-indigo-200 mb-8 max-w-2xl mx-auto"
+            className="text-lg md:text-xl text-slate-400 mb-10 max-w-2xl mx-auto font-light"
           >
             Sistem E-Voting berbasis Blockchain pertama yang menjamin suara Anda 
             terhitung secara akurat, anonim, dan tidak dapat dimanipulasi.
           </p>
 
-          {/* Animasi Zoom In untuk Tombol */}
           <div 
             data-aos="zoom-in" 
             data-aos-delay="400" 
-            className="flex justify-center gap-4"
+            className="flex flex-col sm:flex-row justify-center gap-4 w-full sm:w-auto"
           >
-            <Link 
-              href="/vote" 
-              className="bg-white text-indigo-900 font-bold py-3 px-8 rounded-full shadow-lg hover:bg-gray-100 transition transform hover:scale-105"
-            >
-              Mulai Voting Sekarang ➔
-            </Link>
-            <a 
-              href="#candidates" 
-              className="border border-white text-white font-bold py-3 px-8 rounded-full hover:bg-white/10 transition"
-            >
-              Lihat Kandidat
-            </a>
+            <Button asChild size="lg" className="bg-white text-slate-950 font-bold rounded-full shadow-[0_0_30px_-5px_rgba(255,255,255,0.3)] hover:bg-slate-200 transition-all transform hover:scale-105 h-14 px-8 text-base">
+              <Link href="/vote">
+                Mulai Voting Sekarang ➔
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="lg" className="border-white/20 text-white font-bold rounded-full hover:bg-white/10 hover:text-white transition-all backdrop-blur-md bg-white/5 h-14 px-8 text-base">
+              <a href="#candidates">
+                Pelajari Kandidat
+              </a>
+            </Button>
           </div>
         </div>
         
-        {/* Background Pattern */}
-        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-          <div className="absolute right-0 top-0 w-64 h-64 bg-blue-500 rounded-full blur-3xl"></div>
-          <div className="absolute left-0 bottom-0 w-96 h-96 bg-purple-500 rounded-full blur-3xl"></div>
-        </div>
+        {/* Grid Pattern Background */}
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
       </section>
 
       {/* CANDIDATES SECTION */}
-      <section id="candidates" className="max-w-7xl mx-auto px-4 py-16">
-        <div className="text-center mb-12" data-aos="fade-up">
-          <h2 className="text-3xl font-bold text-gray-800">Kenali Kandidat Pilihanmu</h2>
-          <p className="text-gray-600 mt-2">Pelajari visi, misi, dan rekam jejak mereka sebelum memberikan suara.</p>
-        </div>
+      <section id="candidates" className="relative bg-slate-950 py-24 px-4 overflow-hidden">
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="text-center mb-16" data-aos="fade-up">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Kandidat Pilihan</h2>
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto font-light">Pelajari visi, misi, dan rekam jejak kepemimpinan mereka untuk masa depan Indonesia yang lebih baik.</p>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {candidateData.map((candidate, index) => (
-            // Animasi Flip Left untuk setiap kartu dengan delay berjenjang
-            <div 
-              key={candidate.id} 
-              data-aos="flip-left" 
-              data-aos-delay={index * 200} // Kartu 1 muncul duluan, lalu kartu 2, dst
-            >
-              <CandidateCard data={candidate} />
-            </div>
-          ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 xl:gap-12">
+            {candidateData.map((candidate, index) => (
+              <div key={candidate.id} data-aos="fade-up" data-aos-delay={index * 200}>
+                <CandidateCard data={candidate} />
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* INFO SECTION */}
-      <section className="bg-white py-16 border-t border-gray-200">
-        <div className="max-w-5xl mx-auto px-4 text-center">
-          <h2 data-aos="fade-right" className="text-2xl font-bold text-gray-800 mb-8">
-            Mengapa E-Voting Blockchain?
-          </h2>
+      <section className="relative bg-slate-900 py-24 px-4 border-t border-white/5">
+        <div className="max-w-6xl mx-auto relative z-10">
+          <div className="text-center mb-16" data-aos="fade-up">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Mengapa E-Voting Blockchain?
+            </h2>
+            <p className="text-slate-400 font-light max-w-2xl mx-auto">Teknologi desentralisasi menghadirkan tingkat kepercayaan baru dalam proses demokrasi.</p>
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div data-aos="fade-up" data-aos-delay="0" className="p-6 bg-blue-50 rounded-xl hover:shadow-lg transition">
-              <div className="text-4xl mb-4">🔒</div>
-              <h3 className="font-bold text-lg mb-2">Aman & Terenkripsi</h3>
-              <p className="text-sm text-gray-600">Suara dilindungi kriptografi canggih (ZK-SNARKs) sehingga identitas Anda tetap rahasia.</p>
-            </div>
-            
-            <div data-aos="fade-up" data-aos-delay="200" className="p-6 bg-blue-50 rounded-xl hover:shadow-lg transition">
-              <div className="text-4xl mb-4">⚡</div>
-              <h3 className="font-bold text-lg mb-2">Real-Time & Cepat</h3>
-              <p className="text-sm text-gray-600">Perhitungan suara terjadi secara otomatis di blockchain tanpa perlu rekapitulasi manual.</p>
-            </div>
-            
-            <div data-aos="fade-up" data-aos-delay="400" className="p-6 bg-blue-50 rounded-xl hover:shadow-lg transition">
-              <div className="text-4xl mb-4">🔎</div>
-              <h3 className="font-bold text-lg mb-2">Transparan</h3>
-              <p className="text-sm text-gray-600">Semua orang dapat memverifikasi hasil pemilihan langsung dari jaringan publik.</p>
-            </div>
+            <FeatureCard 
+              delay="0"
+              icon="🔒"
+              title="Aman & Terenkripsi"
+              desc="Suara dilindungi kriptografi canggih (ZK-SNARKs) sehingga identitas Anda tetap rahasia mutlak."
+            />
+            <FeatureCard 
+              delay="200"
+              icon="⚡"
+              title="Real-Time & Presisi"
+              desc="Perhitungan suara dieksekusi oleh smart contract secara otomatis tanpa jeda rekapitulasi manual."
+            />
+            <FeatureCard 
+              delay="400"
+              icon="🔎"
+              title="Transparan & Immutable"
+              desc="Jejak audit on-chain dapat diverifikasi secara publik tanpa entitas tunggal yang dapat mengubah data."
+            />
           </div>
         </div>
       </section>
@@ -121,106 +148,114 @@ export default function Home() {
   );
 }
 
-// Sub-Component (Tidak perlu diubah, cukup AOS di parentnya tadi)
-function CandidateCard({ data }: { data: any }) {
-  // State sekarang bisa 'program', 'awards', atau 'bio'
-  const [activeTab, setActiveTab] = useState<"program" | "awards" | "bio">("bio"); // Default kita set ke 'bio' biar langsung kebaca
+function FeatureCard({ delay, icon, title, desc }: { delay: string, icon: string, title: string, desc: string }) {
+  return (
+    <div data-aos="fade-up" data-aos-delay={delay} className="p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all hover:-translate-y-1 duration-300 group">
+      <div className="w-14 h-14 rounded-full bg-blue-500/20 flex items-center justify-center text-3xl mb-6 border border-blue-500/30 group-hover:scale-110 transition-transform">
+        {icon}
+      </div>
+      <h3 className="font-bold text-xl text-white mb-3">{title}</h3>
+      <p className="text-slate-400 font-light leading-relaxed">{desc}</p>
+    </div>
+  );
+}
+
+function CandidateCard({ data }: { data: Candidate }) {
+  const [activeTab, setActiveTab] = useState<"bio" | "program" | "awards">("bio");
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-shadow border border-gray-100 flex flex-col h-full group">
+    <Card className="rounded-3xl overflow-hidden bg-white/5 border-white/10 backdrop-blur-md hover:shadow-[0_0_40px_-10px_rgba(120,119,198,0.3)] transition-all duration-500 flex flex-col h-full group text-white">
       
-      {/* HEADER KARTU (Tetap sama seperti sebelumnya) */}
-      <div className="relative p-6 text-center text-white overflow-hidden h-64 flex flex-col justify-center items-center">
+      {/* HEADER KARTU */}
+      <div className="relative h-72 flex flex-col justify-end items-center p-6 overflow-hidden">
+        {/* Background Layer */}
         <div 
-          className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
-          style={{ backgroundImage: `url(${data.bgImage})` }}
+          className="absolute inset-0 bg-cover bg-top transition-transform duration-1000 group-hover:scale-110 opacity-60"
+          style={{ backgroundImage: `url(${data.bgImage || data.image})` }} 
         />
-        <div className={`absolute inset-0 ${data.color} opacity-85 mix-blend-multiply`} />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
+        {/* Overlay Gradients for deep look */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
+        <div className={`absolute inset-0 ${data.color} opacity-20 mix-blend-overlay`} />
 
-        <div className="relative z-10 w-full">
-          <div className="absolute top-0 left-0 bg-white/20 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-md border border-white/30 shadow-sm">
-            No. Urut {data.number}
+        <div className="relative z-10 w-full flex flex-col items-center">
+          <div className="absolute top-0 left-0 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full text-xs font-bold tracking-widest border border-white/20 text-white shadow-lg">
+            PASLON {data.number}
           </div>
-          <div className="w-28 h-28 bg-white rounded-full mx-auto mb-3 border-4 border-white/50 flex items-center justify-center overflow-hidden shadow-2xl relative">
-             <img src={data.image} alt={data.name} className="w-full h-full object-cover" />
+          
+          <div className="w-28 h-28 rounded-full mb-4 border-2 border-white/20 p-1 flex items-center justify-center overflow-hidden shadow-2xl relative bg-slate-900/50 backdrop-blur-sm">
+             <Image 
+               src={data.image} 
+               alt={data.name} 
+               width={112} 
+               height={112} 
+               className="w-full h-full object-cover rounded-full" 
+             />
           </div>
-          <h3 className="text-xl font-bold leading-tight drop-shadow-lg text-shadow-sm min-h-[3.5rem] flex items-center justify-center">
+          <h3 className="text-xl md:text-2xl font-extrabold leading-tight text-center bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
             {data.name}
           </h3>
         </div>
       </div>
 
-      {/* TABS NAVIGATION (Sekarang ada 3 Tombol) */}
-      <div className="flex border-b border-gray-100 bg-white relative z-20">
-        <button
-          onClick={() => setActiveTab("bio")}
-          className={`flex-1 py-3 text-xs font-bold transition ${
-            activeTab === "bio" 
-              ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50" 
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-          }`}
-        >
-          📖 Riwayat
-        </button>
-        <button
-          onClick={() => setActiveTab("program")}
-          className={`flex-1 py-3 text-xs font-bold transition ${
-            activeTab === "program" 
-              ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50" 
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-          }`}
-        >
-          🔥 Program
-        </button>
-        <button
-          onClick={() => setActiveTab("awards")}
-          className={`flex-1 py-3 text-xs font-bold transition ${
-            activeTab === "awards" 
-              ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50" 
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-          }`}
-        >
-          🏆 Prestasi
-        </button>
+      {/* TABS NAVIGATION */}
+      <div className="flex border-y border-white/10 bg-slate-950/50 relative z-20">
+        <TabButton active={activeTab === "bio"} onClick={() => setActiveTab("bio")} icon="📖" label="Riwayat" />
+        <TabButton active={activeTab === "program"} onClick={() => setActiveTab("program")} icon="⚡" label="Program" />
+        <TabButton active={activeTab === "awards"} onClick={() => setActiveTab("awards")} icon="🏆" label="Prestasi" />
       </div>
 
       {/* CONTENT AREA */}
-      <div className="p-6 flex-grow bg-white relative z-20">
-        
-        {/* Tampilan untuk Tab BIOGRAFI (Teks Paragraf) */}
-        {activeTab === "bio" && (
-          <div className="animate-in fade-in zoom-in duration-300">
-            <p className="text-sm text-gray-600 leading-relaxed text-justify">
-              {data.biography}
-            </p>
-          </div>
-        )}
+      <CardContent className="p-6 flex-grow bg-slate-950/30 relative z-20">
+        <div className="h-48 overflow-y-auto pr-2 custom-scrollbar">
+          {activeTab === "bio" && (
+            <div className="animate-in fade-in zoom-in duration-500">
+              <p className="text-sm text-slate-300 leading-relaxed font-light text-justify">
+                {data.biography}
+              </p>
+            </div>
+          )}
 
-        {/* Tampilan untuk Tab PROGRAM & PRESTASI (List Poin) */}
-        {activeTab !== "bio" && (
-          <ul className="space-y-3">
-            {(activeTab === "program" ? data.programs : data.achievements || []).map((item: string, idx: number) => (
-              <li key={idx} className="flex items-start text-sm text-gray-700 animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: `${idx * 100}ms` }}>
-                <span className={`mr-2 mt-1 min-w-[16px] ${activeTab === "program" ? "text-green-500" : "text-yellow-500"}`}>
-                  {activeTab === "program" ? "✓" : "★"}
-                </span>
-                {item}
-              </li>
-            ))}
-          </ul>
-        )}
+          {activeTab !== "bio" && (
+            <ul className="space-y-4">
+              {(activeTab === "program" ? data.programs : data.achievements || []).map((item: string, idx: number) => (
+                <li key={idx} className="flex items-start text-sm text-slate-300 animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: `${idx * 100}ms` }}>
+                  <span className="mr-3 mt-0.5 flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-white/10 border border-white/20 text-[10px]">
+                    {activeTab === "program" ? "✓" : "★"}
+                  </span>
+                  <span className="font-light leading-snug">{item}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </CardContent>
 
-      </div>
-
-      <div className="p-4 bg-gray-50 border-t border-gray-100 text-center mt-auto relative z-20">
-        <Link 
-          href="/vote" 
-          className="text-indigo-600 font-bold text-sm hover:text-indigo-800 flex items-center justify-center gap-1 group-hover:gap-2 transition-all"
+      <CardFooter className="p-6 bg-slate-950/80 border-t border-white/10 flex justify-center mt-auto relative z-20">
+        <Button 
+          asChild 
+          className="w-full bg-white text-slate-950 font-bold hover:bg-slate-200 hover:scale-[1.02] transition-all duration-300 h-12 rounded-xl"
         >
-          Pilih Paslon {data.number} <span>➔</span>
-        </Link>
-      </div>
-    </div>
+          <Link href="/vote">
+            Pilih Paslon {data.number} <span className="ml-2">➔</span>
+          </Link>
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
+
+function TabButton({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: string, label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-1 py-3 text-xs font-semibold transition-all duration-300 flex flex-col items-center gap-1 ${
+        active 
+          ? "text-white bg-white/10" 
+          : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
+      }`}
+    >
+      <span className="text-sm">{icon}</span>
+      {label}
+    </button>
   );
 }

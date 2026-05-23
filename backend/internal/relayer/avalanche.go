@@ -13,7 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	"vibevote/backend/internal/blockchain"
+	"evoting_pemilu/internal/blockchain"
 )
 
 func getEnv(key, fallback string) string {
@@ -25,9 +25,9 @@ func getEnv(key, fallback string) string {
 
 // Proof is a standard SnarkJS Groth16 proof format mapped to Go big.Int
 type Proof struct {
-	A [2]*big.Int
-	B [2][2]*big.Int
-	C [2]*big.Int
+	A             [2]*big.Int
+	B             [2][2]*big.Int
+	C             [2]*big.Int
 	PublicSignals []*big.Int
 }
 
@@ -39,11 +39,11 @@ func CastVoteRelay(
 	voteProof Proof,
 ) (string, error) {
 	rpcURL := getEnv("AVALANCHE_RPC_URL", "https://api.avax-test.network/ext/bc/C/rpc")
-	privateKeyHex := os.Getenv("PRIVATE_KEY")
+	privateKeyHex := os.Getenv("RELAYER_PRIVATE_KEY")
 	contractAddressHex := os.Getenv("CONTRACT_ADDRESS")
 
 	if privateKeyHex == "" {
-		return "", fmt.Errorf("PRIVATE_KEY environment variable is not set")
+		return "", fmt.Errorf("RELAYER_PRIVATE_KEY environment variable is not set")
 	}
 	if contractAddressHex == "" {
 		return "", fmt.Errorf("CONTRACT_ADDRESS environment variable is not set")
@@ -90,31 +90,36 @@ func CastVoteRelay(
 	auth.GasPrice = gasPrice
 
 	contractAddress := common.HexToAddress(contractAddressHex)
-	
+
 	// Initialize EVoting Contract Binding
 	evotingContract, err := blockchain.NewEVoting(contractAddress, client)
 	if err != nil {
-	    return "", fmt.Errorf("failed to instantiate EVoting contract: %v", err)
+		return "", fmt.Errorf("failed to instantiate EVoting contract: %v", err)
 	}
 
 	// Convert slice to array for the old ABI binding temporarily
 	var pubSignals [4]*big.Int
+	for i := 0; i < 4; i++ {
+		pubSignals[i] = big.NewInt(0)
+	}
 	if len(voteProof.PublicSignals) >= 4 {
 		copy(pubSignals[:], voteProof.PublicSignals[:4])
+	} else if len(voteProof.PublicSignals) > 0 {
+		copy(pubSignals[:], voteProof.PublicSignals)
 	}
 
 	// EXECUTE SMART CONTRACT CALL
 	// NOTE: Pembaharuan smart contract ke `abigen` baru diperlukan untuk menerima ke-4 proofs.
 	// Untuk saat ini, agar kode bisa mengkompilasi dengan binding lama Anda, kita hanya pass `voteProof`.
 	tx, err := evotingContract.CastVote(
-		auth, 
-		electionId, 
-		candidateId, 
-		nullifier, 
+		auth,
+		electionId,
+		candidateId,
+		nullifier,
 		voteProof.A, voteProof.B, voteProof.C, pubSignals,
 	)
 	if err != nil {
-	    return "", fmt.Errorf("failed to cast vote: %v", err)
+		return "", fmt.Errorf("failed to cast vote: %v", err)
 	}
 
 	return tx.Hash().Hex(), nil

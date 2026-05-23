@@ -14,8 +14,8 @@ export const candidateData = [
         ],
         achievements: [
             "Top 21 Heroes 2021 (Transformative City Leader",
-            "Penghargaan Lee Kuan Yew World Cirty Prize",
-            "Pemabnguan Jakarta Inernatioan Stadium (JIS)",
+            "Penghargaan Lee Kuan Yew World City Prize",
+            "Pembangunan Jakarta International Stadium (JIS)",
             "Integrasi Transportasi Publik (JakLingko)"        
         ]
     },
@@ -30,7 +30,7 @@ export const candidateData = [
             "Makan Siang & Susu Gratis untuk Siswa",
             "Melanjutkan Hilirisasi Industri & SDA",
             "Dana Abadi Pesantren & Kartu Indonesia Sehat Lansia",
-            "Modernisasi Alustista & Pertahanan Negara",
+            "Modernisasi Alutsista & Pertahanan Negara",
         ],
         achievements: [
             "Menteri Terbaik Kabinet Indonesia Maju ( Survei Indo Barometer)",
@@ -53,9 +53,9 @@ export const candidateData = [
             "Sikat Korupsi, Kolusi, dan Nepotisme (KKN)"
         ],
         achievements: [
-            "Satya Lencan Pembangunan dari Presiden RI",
+            "Satya Lencana Pembangunan dari Presiden RI",
             "Provinsi Perencanaan Pembangunan Terbaik Nasional",
-            "Penegak Hukum Tegas & Berintegritas (Mahfud MD",
+            "Penegak Hukum Tegas & Berintegritas (Mahfud MD)",
             "Inovasi Layanan Publik Berbasis Digital (LaporGub)"
         ]
     }

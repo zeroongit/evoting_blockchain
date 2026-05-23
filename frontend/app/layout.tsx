@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { WalletProvider } from "@/context/WalletContext";
+import { Toaster } from "@/components/ui/sonner";
+import { cn } from "@/lib/utils";
 
-const inter = Inter({ subsets: ["latin"] });
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
-  title: "E-Voting Blockchain",
-  description: "Sistem Pemilihan Aman dengan ZK-SNARKs",
+  title: "E-Voting Pemilu",
+  description: "Sistem Pemilu Terdesentralisasi Aman dengan ZK-SNARKs dan AI",
+  icons: {
+    icon: "/images/kpu-logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -17,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="id" className={cn("font-sans", geist.variable)}>
+      <body className="font-sans antialiased bg-background text-foreground">
         <WalletProvider>
         {/* Pasang Navbar di sini, di atas children */}
           <Navbar />
@@ -26,6 +31,7 @@ export default function RootLayout({
         </WalletProvider>
         
         {/* Konten halaman akan muncul di bawah Navbar */}
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );

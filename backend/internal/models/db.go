@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -13,17 +12,11 @@ import (
 var DB *gorm.DB
 
 func InitDB() *gorm.DB {
-	err := godotenv.Load("../.env")
-	if err != nil {
-		godotenv.Load(".env")
-	}
-
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
 	dbUser := os.Getenv("DB_USER")
 	dbPassword := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
-
 
 	var dsn string
 	if dbPassword != "" {
@@ -42,7 +35,7 @@ func InitDB() *gorm.DB {
 	// Auto Migrate
 	err = db.AutoMigrate(&Voter{})
 	if err != nil {
-		log.Printf("Failed to auto migrate database: %v\n", err)
+		log.Fatalf("Failed to auto migrate database: %v\n", err)
 	}
 
 	DB = db

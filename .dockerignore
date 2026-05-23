@@ -1,0 +1,27 @@
+# Git configuration
+.git
+.gitignore
+
+# 🔒 Secrets & Environment (Jangan pernah me-nge-bake .env ke dalam image Docker!)
+# Di Cloud Run, .env disuplai menggunakan Secret Manager atau Environment Variables.
+.env
+.env.*
+
+# Node Modules & Build Outputs (Biar Docker yang install ulang di dalam container)
+node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# OS & IDE
+.DS_Store
+.vscode/
+.idea/
+
+# Local Data & Smart Contracts (Tidak diperlukan oleh Backend Container)
+postgres_data/
+smart-contracts/
+*.log
+README.md
+PRODUCTION_READY.md
+start.sh

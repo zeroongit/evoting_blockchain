@@ -1,0 +1,69 @@
+# ==========================================
+# 🔒 ENVIRONMENT VARIABLES (SANGAT PENTING)
+# ==========================================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*secret*
+
+# ==========================================
+# 📦 NODE.JS & NEXT.JS (FRONTEND & ZK PROVER)
+# ==========================================
+node_modules/
+npm-debug.log
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log
+.vercel/
+.turbo/
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# ==========================================
+# ⚙️ GOLANG (BACKEND)
+# ==========================================
+backend/bin/
+backend/vendor/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+backend/coverage.out
+backend/c.out
+
+# ==========================================
+# ⛓️ SMART CONTRACTS (HARDHAT)
+# ==========================================
+smart-contracts/artifacts/
+smart-contracts/cache/
+smart-contracts/typechain-types/
+smart-contracts/coverage/
+smart-contracts/coverage.json
+smart-contracts/node_modules/
+
+# ==========================================
+# 🔐 ZK-SNARKs (CIRCOM & SNARKJS)
+# ==========================================
+# Hindari push file Powers of Tau (PTAU) yang ukurannya bisa bergiga-giga
+*.ptau
+# File debugging/tracing input sirkuit lokal
+*.wtns
+
+# ==========================================
+# �️ OS, IDE, & LOCAL VOLUMES
+# ==========================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+postgres_data/
+*.log
+*.sqlite
+*.sqlite3
+*.db
