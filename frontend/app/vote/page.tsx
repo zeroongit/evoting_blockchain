@@ -23,7 +23,7 @@ const loadingMessages = [
 ];
 
 // Konfigurasi URL Backend Go secara aman untuk Client-Side
-const API_URL = process.env.NEXT_PUBLIC_BACKEND_GO_URL;
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_GO_URL || "http://localhost:8080/api/v1";
 
 export default function VotePage() {
   const [step, setStep] = useState<VotingStep>("NIK");

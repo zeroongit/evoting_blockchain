@@ -5,6 +5,8 @@ services:
       POSTGRES_USER: admin_vote
       POSTGRES_PASSWORD: Jakarta48!
       POSTGRES_DB: evoting_db
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
@@ -18,6 +20,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: evoting_backend
+    env_file:
+      - .env
     environment:
       DB_HOST: db
       DB_PORT: 5432
@@ -25,7 +29,7 @@ services:
       DB_PASSWORD: Jakarta48!
       DB_NAME: evoting_db
       AVALANCHE_RPC_URL: https://api.avax-test.network/ext/bc/C/rpc
-      CONTRACT_ADDRESS: 0x629de1e8aD0116679dae00C52e3757E47D722b60
+      CONTRACT_ADDRESS: 0x9FCC44BCA018Cc6A994a62c7DBCaA56278422747
     depends_on:
       db:
         condition: service_healthy

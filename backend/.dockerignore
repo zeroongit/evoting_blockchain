@@ -7,21 +7,29 @@
 .env
 .env.*
 
-# Node Modules & Build Outputs (Biar Docker yang install ulang di dalam container)
-node_modules/
-frontend/.next/
-frontend/out/
-frontend/build/
 
 # OS & IDE
 .DS_Store
 .vscode/
 .idea/
+*.swp
+*.swo
+
+# 🐳 Docker & Deployment (Tidak perlu memasukkan konfigurasi docker ke dalam image)
+Dockerfile
+docker-compose*
+.dockerignore
+
+# ⚙️ Go Local Binaries & Caches (Biar Docker build ulang murni dari source)
+bin/
+vendor/
+*.exe
+*.test
+*.out
 
 # Local Data & Smart Contracts (Tidak diperlukan oleh Backend Container)
 postgres_data/
-smart-contracts/
+contracts/
 *.log
-README.md
-PRODUCTION_READY.md
-start.sh
+build/
+tmp/
