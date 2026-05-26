@@ -1,35 +1,35 @@
-# 🗳️ E-Voting Pemilu
+# 🗳️ E-Voting Election
 
-**E-Voting Pemilu** adalah purwarupa (prototype) sistem E-Voting desentralisasi masa depan yang menggabungkan keamanan **Blockchain Avalanche**, privasi mutlak menggunakan **ZK-SNARKs**, dan kecerdasan **Gemini AI** sebagai *Smart Security Auditor*. 
+**E-Voting Election** is a future decentralized E-Voting system prototype combining **Avalanche Blockchain** security, absolute privacy using **ZK-SNARKs**, and **Gemini AI** intelligence as a *Smart Security Auditor*. 
 
-Proyek ini dibangun khusus untuk kompetisi **Vibe Coding** guna mendemonstrasikan bagaimana teknologi mutakhir dapat menciptakan pemilu yang transparan, aman, dan tanpa kompromi pada kerahasiaan (*secrecy*) pemilih.
+This project was built specifically for the **Vibe Coding** competition to demonstrate how cutting-edge technology can create transparent, secure elections without compromising voter *secrecy*.
 
-## 🌟 Fitur Utama & Tech Stack
+## 🌟 Main Features & Tech Stack
 
-- **⛓️ Avalanche Subnet (Simulasi C-Chain):** Menggunakan *smart contract* untuk mencatat bukti (proof) voting secara permanen (*immutable*) sehingga hasil suara tidak dapat dimanipulasi oleh pihak manapun, termasuk penyelenggara pemilu.
-- **🔐 ZK-SNARKs (Zero-Knowledge Proofs):** Memastikan kerahasiaan pemilih secara matematis. Sistem dapat memverifikasi bahwa pemilih memiliki hak suara yang sah tanpa perlu mengetahui *identitas asli* pemilih tersebut atau *siapa* yang dipilihnya.
-- **🤖 Gemini AI Smart Auditor:** Memanfaatkan model *Google Gemini 1.5 Flash* untuk bertindak sebagai auditor keamanan pintar. AI mendeteksi anomali pada *payload* JSON, memvalidasi integritas data, dan bertindak sebagai lapis pertahanan (firewall) sebelum data diteruskan ke blockchain.
-- **⚡ Golang & Next.js:** Dibangun menggunakan arsitektur modern berkinerja tinggi. Backend menggunakan Golang (Gin + GORM) dan Frontend menggunakan Next.js.
+- **⛓️ Avalanche Subnet (C-Chain Simulation):** Uses *smart contracts* to record voting proofs permanently (*immutable*) so that voting results cannot be manipulated by any party, including election organizers.
+- **🔐 ZK-SNARKs (Zero-Knowledge Proofs):** Ensures voter privacy mathematically. The system can verify that a voter has a valid right to vote without needing to know the *real identity* of the voter or *who* they voted for.
+- **🤖 Gemini AI Smart Auditor:** Utilizes the *Google Gemini 1.5 Flash* model to act as a smart security auditor. The AI detects anomalies in the JSON *payload*, validates data integrity, and acts as a defense layer (firewall) before data is passed to the blockchain.
+- **⚡ Golang & Next.js:** Built using a high-performance modern architecture. The backend uses Golang (Gin + GORM) and the Frontend uses Next.js.
 
-## 🚀 Status Proyek: Purwarupa (Demonstrasi)
+## 🚀 Project Status: Prototype (Demonstration)
 
-Saat ini, E-Voting Pemilu berjalan dalam **Mode Purwarupa/Demonstrasi**. Beberapa fitur keamanan yang sangat ketat diimplementasikan sebagai "simulasi" agar lebih mudah diuji, divalidasi, dan dinilai oleh juri (misalnya: *Active Liveness Detection* wajah disimulasikan menggunakan acuan akhiran NIK "999").
+Currently, E-Voting Election is running in **Prototype/Demonstration Mode**. Some highly strict security features are implemented as "simulations" to make it easier to test, validate, and be judged by the panel (e.g., facial *Active Liveness Detection* is simulated using the NIK suffix reference "999").
 
-Untuk melihat rancangan arsitektur skala nasional (*Enterprise/Production*) kami yang sesungguhnya—termasuk integrasi *Sovereign Gasless Subnet*, *Client-Side ZK Proving*, dan *Real-time Gemini Vision AI*—silakan baca dokumen visi arsitektur di bawah ini:
+To view our true national-scale architecture design (*Enterprise/Production*)—including the integration of a *Sovereign Gasless Subnet*, *Client-Side ZK Proving*, and *Real-time Gemini Vision AI*—please read the architectural vision document below:
 
-👉 **[BACA ROADMAP PRODUCTION (PRODUCTION_READY.md)](./PRODUCTION_READY.md)**
+👉 **[READ THE PRODUCTION ROADMAP (PRODUCTION_READY.md)](./PRODUCTION_READY.md)**
 
-## 🛠️ Cara Menjalankan Proyek Lokal
+## 🛠️ How to Run the Project Locally
 
-### 1. Prasyarat Sistem
-- Node.js (v18 atau lebih baru)
-- Go (1.21 atau lebih baru)
+### 1. System Requirements
+- Node.js (v18 or newer)
+- Go (1.21 or newer)
 - PostgreSQL
-- Akun Google AI Studio (Untuk mendapatkan `GEMINI_API_KEY`)
-- Ekstensi Browser **Core Wallet** (Wajib untuk halaman Otoritas Admin, MetaMask tidak didukung di halaman Admin)
+- Google AI Studio Account (To get the `GEMINI_API_KEY`)
+- **Core Wallet** Browser Extension (Required for the Admin Authority page, MetaMask is not supported on the Admin page)
 
-### 2. Setup Backend & Database (Golang)
-Buka terminal dan arahkan ke direktori `backend`:
+### 2. Backend & Database Setup (Golang)
+Open a terminal and navigate to the `backend` directory:
 ```bash
 cd backend
 cp .env.example .env 

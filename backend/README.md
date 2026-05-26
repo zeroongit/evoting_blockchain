@@ -1,38 +1,38 @@
-# ⚙️ Backend Golang - E-Voting Pemilu
+# ⚙️ Golang Backend - E-Voting Election
 
-Direktori ini berisi *source code* untuk server Backend API sistem E-Voting, yang dibangun menggunakan **Golang** (framework Gin) dan ORM **GORM** untuk PostgreSQL. Backend ini bertugas mengelola data *off-chain* (seperti simulasi DPT), memfasilitasi transaksi blockchain (*Relayer* ke jaringan Avalanche), memvalidasi payload menggunakan **Gemini AI**, serta bertindak sebagai fasilitator *Zero-Knowledge Proofs* (ZK-SNARKs).
+This directory contains the *source code* for the E-Voting system Backend API server, built using **Golang** (Gin framework) and **GORM** ORM for PostgreSQL. This backend is responsible for managing *off-chain* data (such as DPT simulation), facilitating blockchain transactions (*Relayer* to the Avalanche network), validating payloads using **Gemini AI**, and acting as a facilitator for *Zero-Knowledge Proofs* (ZK-SNARKs).
 
-## 🛠️ Persyaratan
-- **Go** (v1.21 atau lebih baru)
-- **PostgreSQL** (berjalan di background dan dapat diakses lokal)
-- **Akun Google AI Studio** (untuk mendapatkan `GEMINI_API_KEY`)
+## 🛠️ Requirements
+- **Go** (v1.21 or newer)
+- **PostgreSQL** (running in the background and accessible locally)
+- **Google AI Studio Account** (to get the `GEMINI_API_KEY`)
 
-## 🚀 Cara Menjalankan Server Lokal
+## 🚀 How to Run the Local Server
 
-1. **Salin file konfigurasi environment:**
+1. **Copy the environment configuration file:**
    ```bash
    cp .env.example .env
    ```
-2. **Sesuaikan kredensial di file `.env`**:
-   - Konfigurasi database `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`.
-   - Masukkan `GEMINI_API_KEY`.
-   - Masukkan `RELAYER_PRIVATE_KEY` (Private key dompet yang berisi saldo AVAX Fuji Testnet untuk membiayai gas fee relayer).
+2. **Adjust credentials in the `.env` file**:
+   - Configure database `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`.
+   - Enter `GEMINI_API_KEY`.
+   - Enter `RELAYER_PRIVATE_KEY` (The private key of the wallet containing AVAX Fuji Testnet balance to fund relayer gas fees).
 
-3. **Unduh dependensi Go:**
+3. **Download Go dependencies:**
    ```bash
    go mod tidy
    ```
 
-4. **Jalankan server API:**
+4. **Run the API server:**
    ```bash
    go run cmd/api/main.go
    ```
-   *Server akan berjalan secara default di `http://localhost:8080`.*
+   *The server will run by default at `http://localhost:8080`.*
 
-## 📜 Script Deployment Smart Contract
-Backend ini juga mencakup *script* Golang untuk mendeploy seluruh ekosistem Smart Contract ke jaringan Avalanche Fuji Testnet (menggantikan penggunaan Hardhat).
+## 📜 Smart Contract Deployment Script
+This backend also includes a Golang *script* to deploy the entire Smart Contract ecosystem to the Avalanche Fuji Testnet network (replacing the use of Hardhat).
 
-Untuk menjalankan deployer mandiri:
+To run the standalone deployer:
 ```bash
 go run cmd/deploy/main.go
 ```
@@ -45,4 +45,3 @@ go run cmd/deploy/main.go
   - `handlers/` - *Controller* untuk melayani rute HTTP (API DPT, API Vote, & AI Audit).
   - `models/` - *Schema* model database GORM.
   - `relayer/` - Pemrosesan format payload dan integrasi relay on-chain EVM.
-- `zk/` - Logika pemanggilan *Zero-Knowledge Proving* (melalui SnarkJS wrapper).

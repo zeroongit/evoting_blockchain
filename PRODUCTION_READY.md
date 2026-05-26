@@ -1,56 +1,56 @@
-# 🚀 E-Voting Pemilu: Simulasi to Production Roadmap
+# 🚀 E-Voting Election: Simulation to Production Roadmap
 
-Dokumen ini menjabarkan peta jalan (roadmap) arsitektur sistem E-Voting Pemilu. Saat ini, sistem berjalan sebagai **Purwarupa Simulasi (Demonstrasi)** untuk keperluan *vibe coding*. 
+This document outlines the architectural roadmap for the E-Voting Election system. Currently, the system runs as a **Simulation Prototype (Demonstration)** for *vibe coding* purposes.
 
-Untuk membawa sistem ini ke tahap *Production* (Skala Nasional/Enterprise), berikut adalah transisi arsitektur tingkat lanjut yang akan diimplementasikan:
+To bring this system to the *Production* stage (National/Enterprise Scale), the following advanced architectural transitions will be implemented:
 
 ## 1. 🤖 Liveness Detection & Biometric AI (Gemini)
-- **Status Simulasi:** Saat ini, verifikasi wajah/identitas disimulasikan menggunakan acuan akhiran NIK (misal: akhiran `999` otomatis *reject*, sisanya *pass*).
-- **Target Production:** 
-  - Menggunakan **Gemini Vision/Video AI** sungguhan untuk *Active Liveness Detection*. Pemilih akan diminta melakukan instruksi acak (misal: menoleh ke kiri, mengangguk, atau membaca teks acak di layar).
-  - Gemini akan menganalisis frame video secara *real-time* untuk memastikan tidak ada serangan presentasi (seperti topeng, layar ponsel, atau deepfake/AI-generated video).
-  - Pencocokan wajah akan divalidasi langsung dengan *database* kependudukan (Dukcapil/KPU) menggunakan model pengenalan wajah yang ketat.
+- **Simulation Status:** Currently, face/identity verification is simulated using the NIK (National ID) suffix reference (e.g., suffix `999` automatically *rejects*, the rest *pass*).
+- **Production Target:** 
+  - Utilize real **Gemini Vision/Video AI** for *Active Liveness Detection*. Voters will be asked to perform random instructions (e.g., turning head to the left, nodding, or reading random text on the screen).
+  - Gemini will analyze video frames in *real-time* to ensure there are no presentation attacks (such as masks, phone screens, or deepfake/AI-generated videos).
+  - Facial matching will be validated directly against the population *database* (Dukcapil/KPU) using a strict facial recognition model.
 
-## 2. 🧠 AI Smart Auditor yang Holistik
-- **Status Simulasi:** AI Auditor memvalidasi format dan kelengkapan *string* JSON secara statis (menggunakan prompt Gemini sederhana untuk format ZK Proof).
-- **Target Production:**
-  - **Deep Anomaly Detection:** AI akan dilatih secara spesifik untuk mendeteksi anomali pola *voting* yang mencurigakan (contoh: 10,000 bukti ZK diajukan dari satu rentang IP dalam 1 detik).
-  - **RAG (Retrieval-Augmented Generation):** AI Auditor akan dihubungkan dengan instrumen hukum pemilu dan *smart contract ABI*. AI akan membaca setiap eksekusi di *blockchain* dan secara mandiri memastikan tidak ada relayer yang menyuntikkan *malicious payload*.
+## 2. 🧠 Holistic AI Smart Auditor
+- **Simulation Status:** The AI Auditor validates the format and completeness of the JSON *string* statically (using a simple Gemini prompt for the ZK Proof format).
+- **Production Target:**
+  - **Deep Anomaly Detection:** AI will be specifically trained to detect suspicious *voting* anomaly patterns (e.g., 10,000 ZK proofs submitted from a single IP range in 1 second).
+  - **RAG (Retrieval-Augmented Generation):** The AI Auditor will be connected to election legal instruments and *smart contract ABIs*. The AI will read every execution on the *blockchain* and independently ensure that no relayer injects a *malicious payload*.
 
-## 3. 🌐 Peluncuran Avalanche L1 (Subnet) Mainnet
-- **Status Simulasi:** Transaksi dikirim ke Avalanche Fuji (Testnet) menggunakan *smart contract* standar (C-Chain).
-- **Target Production:**
-  - Kita akan mendeploy **Avalanche L1 (Subnet)** khusus dan berdaulat *(Sovereign Subnet)* untuk sistem E-Voting Nasional.
-  - Subnet ini akan dimodifikasi di level *Virtual Machine* (VM) untuk **Native Gasless Transactions**. Pengguna tidak perlu *relayer* sama sekali; biaya transaksi akan ditanggung secara *native* oleh institusi terkait di tingkat jaringan.
-  - Menambahkan *EVM Precompiles* khusus di Subnet untuk mempercepat verifikasi ZK-SNARK (seperti kurva BN254) sehingga validasi di rantai *(on-chain verification)* lebih efisien dan murah.
+## 3. 🌐 Avalanche L1 (Subnet) Mainnet Launch
+- **Simulation Status:** Transactions are sent to Avalanche Fuji (Testnet) using standard *smart contracts* (C-Chain).
+- **Production Target:**
+  - We will deploy a dedicated and sovereign **Avalanche L1 (Subnet)** for the National E-Voting system.
+  - This subnet will be modified at the *Virtual Machine* (VM) level for **Native Gasless Transactions**. Users will not need a *relayer* at all; transaction fees will be natively covered by the relevant institutions at the network level.
+  - Add specific *EVM Precompiles* in the Subnet to accelerate ZK-SNARK verification (such as the BN254 curve) so that *on-chain verification* is more efficient and cheaper.
 
-## 4. 🔗 Validator Node Terdesentralisasi
-- **Status Simulasi:** Mengandalkan *node* publik yang ada.
-- **Target Production:**
-  - Avalanche Subnet akan diamankan oleh konsorsium *node validators*.
-  - Pihak-pihak independen wajib menjalankan *node validator* ini, misalnya:
-    1. Pemerintah (KPU, Bawaslu, Kominfo)
-    2. Lembaga Swadaya Masyarakat (Perludem, ICW)
-    3. Universitas dan Akademisi independen.
-  - Hal ini menjamin prinsip *Trustless* dan desentralisasi; tidak ada satu pihak pun (termasuk pemerintah) yang bisa mengubah hasil pemungutan suara secara sepihak.
+## 4. 🔗 Decentralized Validator Nodes
+- **Simulation Status:** Relies on existing public *nodes*.
+- **Production Target:**
+  - The Avalanche Subnet will be secured by a consortium of *node validators*.
+  - Independent parties will be required to run these *validator nodes*, for example:
+    1. Government (KPU, Bawaslu, Kominfo)
+    2. Non-Governmental Organizations (Perludem, ICW)
+    3. Universities and independent academics.
+  - This ensures the principle of *Trustless* and decentralization; no single party (including the government) can unilaterally change the election results.
 
-## 5. 🔐 Privasi Perangkat Ekstrem (Client-Side ZK Proving)
-- **Status Simulasi:** Pembuatan ZK-SNARK *proof* disimulasikan di Backend (Server-Side) untuk kemudahan integrasi.
-- **Target Production:**
-  - Menggunakan implementasi *Client-Side Proving* (WASM) di *browser* pengguna atau *Secure Enclave (TEE)* pada *smartphone*.
-  - Data biometrik mentah dan pilihan kandidat (*clear text*) tidak akan pernah meninggalkan perangkat fisik pengguna. Yang terkirim ke server murni hanya bukti matematis (ZK Proof), memberikan jaminan matematis terhadap keamanan dan kerahasiaan (*secrecy*) pemilu.
+## 5. 🔐 Extreme Device Privacy (Client-Side ZK Proving)
+- **Simulation Status:** ZK-SNARK *proof* generation is simulated on the Backend (Server-Side) for ease of integration.
+- **Production Target:**
+  - Implement *Client-Side Proving* (WASM) in the user's *browser* or *Secure Enclave (TEE)* on *smartphones*.
+  - Raw biometric data and candidate choices (*clear text*) will never leave the user's physical device. Only the mathematical proof (ZK Proof) is sent to the server, providing a mathematical guarantee of the election's security and *secrecy*.
 
-## 6. 🛡️ Infrastruktur High Availability & Mitigasi DDoS
-- **Status Simulasi:** Berjalan pada *local server* atau *single cloud instance*.
-- **Target Production:**
-  - Menerapkan arsitektur *Auto-Scaling* (misal: Kubernetes / Google Cloud Run) untuk menangani lonjakan jutaan pemilih secara bersamaan (C10M problem) secara mulus pada Hari Pemilihan (*Election Day*).
-  - Integrasi *Web Application Firewall* (WAF) tingkat lanjut (seperti Cloudflare Enterprise atau Cloud Armor) guna menahan serangan *Distributed Denial of Service* (DDoS) skala besar yang rentan menyerang infrastruktur vital negara.
+## 6. 🛡️ High Availability Infrastructure & DDoS Mitigation
+- **Simulation Status:** Runs on a *local server* or *single cloud instance*.
+- **Production Target:**
+  - Implement an *Auto-Scaling* architecture (e.g., Kubernetes / Google Cloud Run) to handle the surge of millions of voters simultaneously (the C10M problem) seamlessly on *Election Day*.
+  - Integration of an advanced *Web Application Firewall* (WAF) (such as Cloudflare Enterprise or Cloud Armor) to withstand large-scale *Distributed Denial of Service* (DDoS) attacks that are prone to targeting vital state infrastructure.
 
-## 7. 📜 Kepatuhan Regulasi (UU PDP) & Audit Pihak Ketiga
-- **Status Simulasi:** Audit keamanan mandiri (*self-audited*).
-- **Target Production:**
-  - Arsitektur akan disesuaikan agar 100% mematuhi **Undang-Undang Pelindungan Data Pribadi (UU PDP)** yang berlaku di Indonesia, termasuk tata kelola penyimpanan dan retensi data.
-  - Meski dilindungi oleh Gemini AI secara *real-time*, kode *Smart Contract* akan terlebih dahulu diaudit secara statis dan ekstensif oleh firma keamanan keamanan *blockchain* global Tier-1 (seperti CertiK, Trail of Bits, atau Hacken) sebelum peluncuran di Mainnet untuk menutup segala kemungkinan kerentanan logika dan re-entrancy.
+## 7. 📜 Regulatory Compliance (PDP Law) & Third-Party Audit
+- **Simulation Status:** *Self-audited* security.
+- **Production Target:**
+  - The architecture will be adjusted to 100% comply with the **Personal Data Protection Law (UU PDP)** applicable in Indonesia, including data storage and retention governance.
+  - Although protected by Gemini AI in *real-time*, the *Smart Contract* code will first be statically and extensively audited by a Tier-1 global *blockchain* security firm (such as CertiK, Trail of Bits, or Hacken) before launching on the Mainnet to close any possible logic and re-entrancy vulnerabilities.
 
 ---
-*Catatan: Rancangan ini membuktikan bahwa Purwarupa (Demonstrasi) saat ini dirancang dengan kesadaran penuh terhadap rintangan dunia nyata, dan siap diskalakan menjadi solusi infrastruktur berdaulat menggunakan Avalanche Subnets & AI Gemini sesungguhnya.*
+*Note: This design proves that the current Prototype (Demonstration) is designed with full awareness of real-world obstacles and is ready to be scaled into a sovereign infrastructure solution using Avalanche Subnets & the real Gemini AI.*

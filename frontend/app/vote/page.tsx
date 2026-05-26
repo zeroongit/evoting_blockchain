@@ -23,7 +23,7 @@ const loadingMessages = [
 ];
 
 // Konfigurasi URL Backend Go secara aman untuk Client-Side
-const API_URL = process.env.NEXT_PUBLIC_BACKEND_GO_URL || "http://localhost:8080/api/v1";
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_GO_URL || "https://vibevote-backend-124799255071.asia-southeast2.run.app/api/v1";
 
 export default function VotePage() {
   const [step, setStep] = useState<VotingStep>("NIK");
