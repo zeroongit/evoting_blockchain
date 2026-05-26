@@ -1,0 +1,12 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: evoting_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      # Sesuai dengan default API URL dari backend Anda
+      - NEXT_PUBLIC_BACKEND_GO_URL=http://localhost:8080/api/v1
+    restart: unless-stopped
