@@ -1,8 +1,10 @@
-# Git configuration
+
+
+# 📦 Version Control
 .git
 .gitignore
 
-# 🔒 Secrets & Environment (Jangan pernah me-nge-bake .env ke dalam image Docker!)
+# � Secrets & Environment (Jangan pernah me-nge-bake .env ke dalam image Docker!)
 # Di Cloud Run, .env disuplai menggunakan Secret Manager atau Environment Variables.
 .env
 .env.*
