@@ -1,19 +1,21 @@
-services:
-  db:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_USER: admin_vote
-      POSTGRES_PASSWORD: Jakarta48!
-      POSTGRES_DB: evoting_db
-    volumes:
-      - ./postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin_vote -d evoting_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+# services:
+#   db:
+#     image: postgres:15-alpine
+#     environment:
+#       POSTGRES_USER: admin_vote
+#       POSTGRES_PASSWORD: Jakarta48!
+#       POSTGRES_DB: evoting_db
+#     volumes:
+#       - ./postgres_data:/var/lib/postgresql/data
+#     ports:
+#       - "5432:5432"
+#     healthcheck:
+#       test: ["CMD-SHELL", "pg_isready -U admin_vote -d evoting_db"]
+#       interval: 5s
+#       timeout: 5s
+#       retries: 5
+
+# karena database sudah dibuat langsung ke docker tidak lewat supabase, kita bisa skip service db di docker-compose.yml untuk backend
 
   backend:
     build:

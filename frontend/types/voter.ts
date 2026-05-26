@@ -4,5 +4,5 @@ export interface Voter {
   nik: string;
   full_name: string;
   is_used: boolean;
-  suffix_type: 'normal' | 'rejected_999' | 'warning_888';
+  suffix_type: 'normal' | 'rejected_999';
 }
