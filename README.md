@@ -26,7 +26,7 @@ Untuk melihat rancangan arsitektur skala nasional (*Enterprise/Production*) kami
 - Go (1.21 atau lebih baru)
 - PostgreSQL
 - Akun Google AI Studio (Untuk mendapatkan `GEMINI_API_KEY`)
-- Ekstensi Browser Metamask / WalletConnect
+- Ekstensi Browser **Core Wallet** (Wajib untuk halaman Otoritas Admin, MetaMask tidak didukung di halaman Admin)
 
 ### 2. Setup Backend & Database (Golang)
 Buka terminal dan arahkan ke direktori `backend`:
@@ -53,11 +53,15 @@ npm run dev
 
 ## 📂 Struktur Repositori Utama
 
-- `/backend` - Logic server API (Gin, GORM), eksekusi ZK Prover (`/zk`), dan interaksi Gemini AI.
-- `/backend/internal/blockchain` - Integrasi RPC Relayer/Go bindings ke Avalanche.
-- `/frontend` - Antarmuka pengguna (Next.js, Web3, viem, Tailwind CSS).
-- `/smart-contracts` - Source code Solidity, konfigurasi Hardhat, dan *deployment scripts* ke Avalanche Fuji.
+- `/backend` - Logic server API berbasis Golang (Gin, GORM) & Gemini AI.
+  - `/backend/cmd` - Entry point server API (`/api`) dan skrip deployment blockchain (`/deploy`).
+  - `/backend/internal` - Logic internal backend (`handlers`, `middleware`, `models`, dan `relayer`).
+  - `/backend/internal/blockchain` - Integrasi Go bindings (abigen) & RPC ke jaringan Avalanche Fuji.
+  - `/backend/zk` - Eksekusi Zero-Knowledge Prover (SnarkJS).
+- `/frontend` - Antarmuka pengguna berbasis Web3 (Next.js App Router, viem, Tailwind CSS).
+  - `/frontend/app` - Halaman rute simulasi E-Voting (`/admin`, `/vote`, `/results`).
+  - `/frontend/components` - Komponen antarmuka pengguna (UI) React.
+  - `/frontend/lib` - Konstanta ABI, konfigurasi alamat Smart Contract, dan data Paslon.
 - `PRODUCTION_READY.md` - Rancangan *Scale-up* Arsitektur untuk produksi skala riil.
 
 ---
-*Dibuat dengan 💡 untuk masa depan demokrasi digital yang lebih baik.*
