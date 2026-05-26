@@ -25,13 +25,17 @@ func main() {
 
 	// Inisialisasi koneksi PostgreSQL
 	models.InitDB()
+	
+	// Hubungkan instance DB ke global variabel di package handlers
+	handlers.GlobalDB = models.DB
 
 	router := gin.Default()
 
 	// CORS middleware
 	// 🚀 HAPUS MIDDLEWARE LAMA, GANTI DENGAN BLOK INI:
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:3000"} // Izinkan frontend Next.js kamu
+	config.AllowOrigins = []string{"http://localhost:3000",
+		"https://vibevote-frontend-124799255071.asia-southeast2.run.app",} // Izinkan frontend Next.js kamu
 	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization", "X-CSRF-Token", "x-csrf-token"}
 	config.AllowCredentials = true
@@ -50,6 +54,8 @@ func main() {
 		api.POST("/admin/start", handlers.StartElection)
 		api.POST("/admin/end", handlers.EndElection)
 		api.GET("/admin/status", handlers.GetElectionStatus)
+		api.POST("/voters/verify-status", handlers.VerifyStatusHandler)
+    	api.POST("/voters/mark-voted", handlers.MarkVotedHandler)
 	}
 
 	port := os.Getenv("PORT")
@@ -60,7 +66,7 @@ func main() {
 	log.Printf("Server listening on port %s", port)
 
 	srv := &http.Server{
-		Addr:    "127.0.0.1:" + port,
+		Addr:    ":" + port,
 		Handler: router,
 	}
 

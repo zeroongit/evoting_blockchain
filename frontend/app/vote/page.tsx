@@ -167,8 +167,40 @@ export default function VotePage() {
     }
   };
 
-  const handleFaceVerified = () => {
-    setStep("SELECT_CANDIDATE");
+  const handleFaceVerified = async () => {
+    try {
+      if (voterNik.endsWith("999")) {
+        await fetch(`${API_URL}/voters/verify-status`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+          },
+          body: JSON.stringify({ voter_id: voterNik, is_voter_verified: true, is_humanity_verified: false })
+        });
+        
+        alert("🚨 Terdeteksi Joki NIK: Wajah Anda tidak cocok dengan pemilik asli NIK ini! Akses Bilik Suara Diblokir.");
+        setStep("VERIFY_FACE");
+        return;
+      }
+
+      // Jika NIK Normal
+      await fetch(`${API_URL}/voters/verify-status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken
+        },
+        body: JSON.stringify({ voter_id: voterNik, is_voter_verified: true, is_humanity_verified: true })
+      });
+
+      // Lanjutkan proses eksekusi kode transaksi blockchain verifyHumanity bawaan 
+      // sampai sukses masuk ke bilik suara.
+      setStep("SELECT_CANDIDATE");
+    } catch (error) {
+      console.error("Gagal sinkronisasi status verifikasi:", error);
+      toast.error("Terjadi kesalahan sistem saat memverifikasi identitas.");
+    }
   };
 
   const handleFaceFailed = () => {
@@ -268,7 +300,32 @@ export default function VotePage() {
       }
       
       const data = text ? JSON.parse(text) : {};
-      setTxHash(data.txHash || "0xabc123...");
+      const hash = data.txHash || "0xabc123...";
+      setTxHash(hash);
+
+      // Tunggu konfirmasi transaksi selesai di blockchain
+      if (hash.startsWith("0x")) {
+        try {
+          await publicClient.waitForTransactionReceipt({ hash: hash as `0x${string}` });
+        } catch (e) {
+          console.warn("Gagal menunggu receipt transaksi:", e);
+        }
+      }
+
+      // Sinkronisasi otomatis ke database Supabase via Backend Go
+      try {
+        await fetch(`${API_URL}/voters/mark-voted`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+          },
+          body: JSON.stringify({ voter_id: voterNik })
+        });
+      } catch (err) {
+        console.error("Gagal sinkronisasi update status ke Supabase:", err);
+      }
+
       setStep("DONE");
       toast.success("Suara berhasil diverifikasi ZK dan terekam di Avalanche Fuji!");
     } catch (error) {

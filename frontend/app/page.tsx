@@ -4,8 +4,6 @@ import Link from "next/link";
 import { candidateData } from "@/lib/candidateData";
 import { useState, useEffect } from "react";
 import AOS from "aos";
-// @ts-expect-error - AOS CSS import tidak memiliki deklarasi tipe bawaan
-import "aos/dist/aos.css"; // Import CSS Animasi AOS
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";

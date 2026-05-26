@@ -25,7 +25,10 @@ func InitDB() *gorm.DB {
 		dsn = fmt.Sprintf("host=%s user=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Jakarta", dbHost, dbUser, dbName, dbPort)
 	}
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.New(postgres.Config{
+		DSN:                  dsn,
+		PreferSimpleProtocol: true, // Mencegah error prepared statement (SQLSTATE 42P05) pada Postgres / Supabase
+	}), &gorm.Config{})
 	if err != nil {
 		log.Printf("Unable to connect to database: %v\n", err)
 		return nil
@@ -35,7 +38,9 @@ func InitDB() *gorm.DB {
 	// Auto Migrate
 	err = db.AutoMigrate(&Voter{})
 	if err != nil {
-		log.Fatalf("Failed to auto migrate database: %v\n", err)
+		log.Printf("Peringatan: Gagal melakukan auto migrate (bisa diabaikan jika tabel sudah ada): %v\n", err)
+	} else {
+		log.Println("Database migration completed.")
 	}
 
 	DB = db

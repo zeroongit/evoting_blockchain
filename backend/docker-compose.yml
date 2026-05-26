@@ -17,6 +17,7 @@
 
 # karena database sudah dibuat langsung ke docker tidak lewat supabase, kita bisa skip service db di docker-compose.yml untuk backend
 
+services:
   backend:
     build:
       context: .
@@ -32,8 +33,8 @@
       DB_NAME: evoting_db
       AVALANCHE_RPC_URL: https://api.avax-test.network/ext/bc/C/rpc
       CONTRACT_ADDRESS: 0x9FCC44BCA018Cc6A994a62c7DBCaA56278422747
-    depends_on:
-      db:
-        condition: service_healthy
+#    depends_on:
+#      db:
+#        condition: service_healthy
     ports:
       - "8080:8080"
