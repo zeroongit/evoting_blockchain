@@ -20,6 +20,10 @@ COPY . .
 # Nonaktifkan telemetry Next.js
 ENV NEXT_TELEMETRY_DISABLED 1
 
+# Ambil argumen build untuk URL backend agar di-bake oleh Next.js
+ARG NEXT_PUBLIC_BACKEND_GO_URL
+ENV NEXT_PUBLIC_BACKEND_GO_URL=$NEXT_PUBLIC_BACKEND_GO_URL
+
 RUN npm run build
 
 # =========================================================================

@@ -1,0 +1,69 @@
+steps:
+  # =========================================================================
+  # 1. BUILD, PUSH, & DEPLOY BACKEND
+  # =========================================================================
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-backend'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/$_BACKEND_SERVICE_NAME:$COMMIT_SHA', './backend']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-backend'
+    args: ['push', 'gcr.io/$PROJECT_ID/$_BACKEND_SERVICE_NAME:$COMMIT_SHA']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-backend'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '$_BACKEND_SERVICE_NAME'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/$_BACKEND_SERVICE_NAME:$COMMIT_SHA'
+      - '--region'
+      - '$_REGION'
+      - '--allow-unauthenticated'
+      - '--port'
+      - '8080'
+
+  # =========================================================================
+  # 2. BUILD, PUSH, & DEPLOY FRONTEND
+  # =========================================================================
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-frontend'
+    args: 
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/$_FRONTEND_SERVICE_NAME:$COMMIT_SHA'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_BACKEND_GO_URL=$_BACKEND_URL'
+      - './frontend'
+    # Frontend menunggu backend selesai di-deploy (Opsional, tapi disarankan)
+    waitFor: ['deploy-backend']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-frontend'
+    args: ['push', 'gcr.io/$PROJECT_ID/$_FRONTEND_SERVICE_NAME:$COMMIT_SHA']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-frontend'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '$_FRONTEND_SERVICE_NAME'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/$_FRONTEND_SERVICE_NAME:$COMMIT_SHA'
+      - '--region'
+      - '$_REGION'
+      - '--allow-unauthenticated'
+      - '--port'
+      - '3000'
+
+substitutions:
+  _REGION: asia-southeast2 # Region Jakarta, ubah jika diperlukan
+  _BACKEND_SERVICE_NAME: evoting-backend
+  _FRONTEND_SERVICE_NAME: evoting-frontend
+  _BACKEND_URL: "https://placeholder-url.a.run.app/api/v1" # ⚠️ Ganti ini via Cloud Build Trigger settings!
+
+options:
+  logging: CLOUD_LOGGING_ONLY
