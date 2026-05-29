@@ -31,7 +31,7 @@ export default function Navbar() {
                                     className="object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
                                 />
                             </div>
-                            <span className="font-black text-xl tracking-[0.15em] uppercase hidden sm:block bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500 ml-2">
+                            <span className="font-black text-lg sm:text-xl tracking-[0.15em] uppercase block bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500 ml-2">
                                 E-Voting
                             </span>
                         </Link>
